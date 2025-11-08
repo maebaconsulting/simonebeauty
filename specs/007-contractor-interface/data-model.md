@@ -94,7 +94,15 @@ CREATE TABLE contractor_applications (
   last_name VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL,
   phone VARCHAR(20) NOT NULL,
-  address TEXT NOT NULL,
+
+  -- Statut du candidat
+  contractor_type VARCHAR(50) CHECK (contractor_type IN ('société', 'personnel')),
+
+  -- Adresse décomposée
+  street_address TEXT,
+  city VARCHAR(100),
+  postal_code VARCHAR(10),
+  country VARCHAR(100) NOT NULL DEFAULT 'France',
 
   -- Étape 2: Profil professionnel
   profession VARCHAR(100) NOT NULL,
@@ -105,11 +113,13 @@ CREATE TABLE contractor_applications (
 
   -- Étape 3: Disponibilités et zones
   geographic_zones TEXT[] NOT NULL, -- Array of zones (arrondissements, villes)
-  preferred_schedule TEXT,
   work_frequency VARCHAR(50) CHECK (work_frequency IN ('full_time', 'part_time', 'occasional')),
 
-  -- Étape 4: Motivation
-  motivation TEXT NOT NULL CHECK (LENGTH(motivation) >= 100),
+  -- Horaires hebdomadaires avec créneaux et pauses
+  weekly_availability JSONB, -- Format: {"monday": {"available": true, "shifts": [{"start": "09:00", "end": "17:00"}], "breaks": [{"start": "12:00", "end": "13:00"}]}, ...}
+
+  -- Étape 4: Motivation (optionnelle)
+  motivation TEXT CHECK (motivation IS NULL OR LENGTH(motivation) >= 100),
 
   -- Étape 5: Documents
   cv_file_path TEXT,
@@ -138,9 +148,15 @@ CREATE TABLE contractor_applications (
 );
 
 COMMENT ON TABLE contractor_applications IS 'Candidatures de prestataires soumises via le formulaire multi-étapes';
+COMMENT ON COLUMN contractor_applications.contractor_type IS 'Type de structure: société (entreprise) ou personnel (auto-entrepreneur/particulier)';
+COMMENT ON COLUMN contractor_applications.street_address IS 'Adresse complète (numéro, rue, complément)';
+COMMENT ON COLUMN contractor_applications.city IS 'Ville du candidat';
+COMMENT ON COLUMN contractor_applications.postal_code IS 'Code postal';
+COMMENT ON COLUMN contractor_applications.country IS 'Pays (obligatoire, par défaut France)';
 COMMENT ON COLUMN contractor_applications.specialties IS 'IDs des spécialités sélectionnées (relation avec table specialties)';
 COMMENT ON COLUMN contractor_applications.geographic_zones IS 'Zones d''intervention souhaitées (ex: ["75001", "75002", "Boulogne-Billancourt"])';
-COMMENT ON COLUMN contractor_applications.motivation IS 'Texte libre minimum 100 caractères expliquant la motivation du candidat';
+COMMENT ON COLUMN contractor_applications.weekly_availability IS 'Planning hebdomadaire avec disponibilités par jour: {"monday": {"available": true, "shifts": [{"start": "09:00", "end": "17:00"}], "breaks": [{"start": "12:00", "end": "13:00"}]}, ...}. Format HH:mm pour les heures.';
+COMMENT ON COLUMN contractor_applications.motivation IS 'Texte libre OPTIONNEL (minimum 100 caractères si fourni) expliquant la motivation du candidat';
 COMMENT ON COLUMN contractor_applications.cv_file_path IS 'Chemin du fichier CV dans Supabase Storage (bucket: job-applications/cv/)';
 COMMENT ON COLUMN contractor_applications.certifications_file_paths IS 'Chemins des fichiers de certifications dans Supabase Storage';
 COMMENT ON COLUMN contractor_applications.portfolio_file_paths IS 'Chemins des photos de réalisations dans Supabase Storage';
@@ -176,16 +192,23 @@ USING (
   )
 );
 
--- Validation trigger: reject if motivation too short
+-- Validation trigger: validate motivation if provided, check rejection reason
 CREATE OR REPLACE FUNCTION check_contractor_application()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF LENGTH(NEW.motivation) < 100 THEN
-    RAISE EXCEPTION 'La motivation doit contenir au moins 100 caractères';
+  -- Si motivation fournie, vérifier longueur minimum
+  IF NEW.motivation IS NOT NULL AND LENGTH(NEW.motivation) < 100 THEN
+    RAISE EXCEPTION 'La motivation doit contenir au moins 100 caractères si elle est fournie';
   END IF;
 
+  -- Vérifier motif de refus obligatoire
   IF NEW.status = 'rejected' AND (NEW.rejection_reason IS NULL OR LENGTH(NEW.rejection_reason) < 10) THEN
     RAISE EXCEPTION 'Un motif de refus est obligatoire (minimum 10 caractères)';
+  END IF;
+
+  -- Vérifier que le pays est bien fourni
+  IF NEW.country IS NULL OR TRIM(NEW.country) = '' THEN
+    RAISE EXCEPTION 'Le pays est obligatoire';
   END IF;
 
   RETURN NEW;
