@@ -1,0 +1,86 @@
+/**
+ * Form types and Zod schemas for Promo Code system
+ * Task: T004
+ */
+
+import { z } from 'zod'
+
+/**
+ * Zod schema for promo code creation/editing
+ */
+export const promoCodeFormSchema = z.object({
+  code: z
+    .string()
+    .min(4, 'Le code doit contenir au moins 4 caractères')
+    .max(50, 'Le code ne peut pas dépasser 50 caractères')
+    .regex(/^[A-Z0-9]+$/, 'Le code doit contenir uniquement des lettres majuscules et des chiffres')
+    .transform(val => val.toUpperCase()),
+
+  description: z
+    .string()
+    .max(500, 'La description ne peut pas dépasser 500 caractères')
+    .optional(),
+
+  discount_type: z.enum(['percentage', 'fixed_amount'], {
+    required_error: 'Veuillez choisir un type de réduction'
+  }),
+
+  discount_value: z
+    .number()
+    .positive('La valeur doit être positive')
+    .max(100, 'Le pourcentage ne peut pas dépasser 100%'),
+
+  max_discount_amount: z
+    .number()
+    .positive('Le montant maximum doit être positif')
+    .optional()
+    .nullable(),
+
+  valid_from: z.date().optional().nullable(),
+  valid_until: z.date().optional().nullable(),
+
+  max_uses: z
+    .number()
+    .int('Le nombre doit être entier')
+    .positive('Le nombre doit être positif')
+    .optional()
+    .nullable(),
+
+  max_uses_per_user: z
+    .number()
+    .int('Le nombre doit être entier')
+    .positive('Le nombre doit être positif')
+    .default(1),
+
+  first_booking_only: z.boolean().default(false),
+
+  min_order_amount: z
+    .number()
+    .positive('Le montant minimum doit être positif')
+    .optional()
+    .nullable(),
+
+  specific_services: z.array(z.number()).optional().nullable(),
+  specific_categories: z.array(z.number()).optional().nullable(),
+
+  is_active: z.boolean().default(true)
+})
+.refine(
+  data => data.discount_type !== 'percentage' || data.discount_value <= 100,
+  {
+    message: 'Le pourcentage ne peut pas dépasser 100%',
+    path: ['discount_value']
+  }
+)
+.refine(
+  data => !data.valid_until || !data.valid_from || data.valid_until > data.valid_from,
+  {
+    message: 'La date de fin doit être postérieure à la date de début',
+    path: ['valid_until']
+  }
+)
+
+/**
+ * Inferred TypeScript type from Zod schema
+ */
+export type PromoCodeFormData = z.infer<typeof promoCodeFormSchema>

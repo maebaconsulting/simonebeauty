@@ -1,0 +1,473 @@
+openapi: 3.0.3
+info:
+  title: Ready to Go - Urgent Notifications API
+  version: 1.0.0
+  description: |
+    API pour gérer les notifications prioritaires des réservations urgentes
+    (envoi, confirmation, refus, timeout)
+
+servers:
+  - url: https://{project-ref}.supabase.co/functions/v1
+    description: Supabase Edge Functions
+    variables:
+      project-ref:
+        default: your-project-ref
+
+paths:
+  /urgency/send-notification:
+    post:
+      summary: Envoyer une notification urgente à un prestataire
+      description: |
+        Envoie une notification prioritaire (push + SMS si Express + email)
+        au prestataire assigné avec badge urgence, bonus et temps de trajet
+      operationId: sendUrgentNotification
+      tags:
+        - Notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+                - contractorId
+                - urgencyLevel
+                - bonusAmount
+                - travelTimeMinutes
+                - departureTime
+              properties:
+                bookingId:
+                  type: integer
+                  format: int64
+                  example: 789
+                contractorId:
+                  type: integer
+                  format: int64
+                  example: 123
+                urgencyLevel:
+                  type: string
+                  enum: [express, fast, today]
+                  example: "fast"
+                bonusAmount:
+                  type: number
+                  format: decimal
+                  example: 12.00
+                travelTimeMinutes:
+                  type: integer
+                  example: 15
+                departureTime:
+                  type: string
+                  format: date-time
+                  description: Heure à laquelle le prestataire doit partir
+                  example: "2025-11-07T14:45:00Z"
+                attemptNumber:
+                  type: integer
+                  description: Numéro de la tentative (1, 2, ou 3)
+                  default: 1
+                  example: 1
+      responses:
+        '200':
+          description: Notification envoyée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UrgentNotification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Prestataire ou réservation non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /urgency/notification/{notificationId}/respond:
+    post:
+      summary: Répondre à une notification urgente (accepter/refuser)
+      description: |
+        Le prestataire accepte ou refuse la mission urgente
+      operationId: respondToUrgentNotification
+      tags:
+        - Notifications
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - response
+              properties:
+                response:
+                  type: string
+                  enum: [confirmed, refused]
+                  example: "confirmed"
+                message:
+                  type: string
+                  description: Message optionnel (surtout en cas de refus)
+                  example: "Désolé, je suis déjà en intervention"
+      responses:
+        '200':
+          description: Réponse enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notificationId:
+                        type: integer
+                        format: int64
+                        example: 456
+                      status:
+                        type: string
+                        enum: [confirmed, refused]
+                        example: "confirmed"
+                      booking:
+                        $ref: '#/components/schemas/BookingInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Notification non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Notification déjà traitée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /urgency/notification/{notificationId}:
+    get:
+      summary: Obtenir les détails d'une notification urgente
+      description: |
+        Retourne les détails complets de la notification
+      operationId: getUrgentNotification
+      tags:
+        - Notifications
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 456
+      responses:
+        '200':
+          description: Détails de la notification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UrgentNotificationDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Notification non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contractor/urgent-notifications:
+    get:
+      summary: Lister les notifications urgentes du prestataire
+      description: |
+        Retourne la liste des notifications urgentes reçues avec filtres
+      operationId: listContractorUrgentNotifications
+      tags:
+        - Notifications
+      parameters:
+        - name: status
+          in: query
+          description: Filtrer par statut
+          required: false
+          schema:
+            type: string
+            enum: [pending, confirmed, refused, timeout]
+        - name: limit
+          in: query
+          description: Nombre de résultats
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          description: Décalage pour pagination
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Liste des notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UrgentNotification'
+                      total:
+                        type: integer
+                        example: 45
+                      limit:
+                        type: integer
+                        example: 20
+                      offset:
+                        type: integer
+                        example: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    UrgentNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 456
+        bookingId:
+          type: integer
+          format: int64
+          example: 789
+        contractorId:
+          type: integer
+          format: int64
+          example: 123
+        urgencyLevel:
+          type: string
+          enum: [express, fast, today]
+          example: "fast"
+        urgencyBadge:
+          type: string
+          description: Badge visuel
+          example: "🏃 RAPIDE"
+        bonusAmount:
+          type: number
+          format: decimal
+          example: 12.00
+        travelTimeMinutes:
+          type: integer
+          example: 15
+        departureTime:
+          type: string
+          format: date-time
+          example: "2025-11-07T14:45:00Z"
+        status:
+          type: string
+          enum: [pending, confirmed, refused, timeout]
+          example: "pending"
+        sentAt:
+          type: string
+          format: date-time
+          example: "2025-11-07T14:30:00Z"
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        pushNotificationSent:
+          type: boolean
+          example: true
+        smsSent:
+          type: boolean
+          example: true
+        emailSent:
+          type: boolean
+          example: true
+        contractorMessage:
+          type: string
+          nullable: true
+          example: null
+        attemptNumber:
+          type: integer
+          example: 1
+
+    UrgentNotificationDetail:
+      allOf:
+        - $ref: '#/components/schemas/UrgentNotification'
+        - type: object
+          properties:
+            booking:
+              $ref: '#/components/schemas/BookingInfo'
+            client:
+              $ref: '#/components/schemas/ClientInfo'
+            timeRemaining:
+              type: integer
+              description: Secondes restantes pour répondre (max 300)
+              example: 245
+
+    BookingInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 789
+        serviceName:
+          type: string
+          example: "Massage Suédois 60 min"
+        scheduledStart:
+          type: string
+          format: date-time
+          example: "2025-11-07T15:00:00Z"
+        scheduledEnd:
+          type: string
+          format: date-time
+          example: "2025-11-07T16:00:00Z"
+        serviceAddress:
+          type: object
+          properties:
+            fullAddress:
+              type: string
+              example: "123 Rue de Rivoli, 75001 Paris"
+            postalCode:
+              type: string
+              example: "75001"
+            city:
+              type: string
+              example: "Paris"
+            instructions:
+              type: string
+              nullable: true
+              example: "Code porte: 1234A"
+        totalPrice:
+          type: number
+          format: decimal
+          example: 104.00
+        urgencyPremium:
+          type: number
+          format: decimal
+          example: 24.00
+
+    ClientInfo:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: "Sophie"
+        lastName:
+          type: string
+          example: "Martin"
+        phone:
+          type: string
+          example: "+33612345678"
+        rating:
+          type: number
+          format: float
+          nullable: true
+          example: 4.8
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "NOTIFICATION_ALREADY_PROCESSED"
+            message:
+              type: string
+              example: "Cette notification a déjà été traitée"
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INVALID_REQUEST"
+              message: "bookingId et contractorId sont requis"
+
+    Unauthorized:
+      description: Non authentifié ou non autorisé
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Vous n'avez pas accès à cette notification"
+
+    InternalError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "Une erreur est survenue lors de l'envoi de la notification"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

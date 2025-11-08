@@ -1,0 +1,170 @@
+/**
+ * Supabase queries module for promo codes
+ * Task: T011
+ * Type-safe query builders for promo code operations
+ */
+
+import { createClient } from '@/lib/supabase/client'
+import type {
+  PromoCode,
+  PromoCodeUsage,
+  PromoCodeStatus
+} from '@/types/promo-code'
+import type {
+  PromoValidationResult,
+  ValidatePromoParams
+} from '@/types/promo-validation'
+import type {
+  PromoCodeFilters,
+  PaginationParams
+} from '@/types/promo-filters'
+
+/**
+ * Validate a promo code via RPC
+ */
+export async function validatePromoCode(
+  params: ValidatePromoParams
+): Promise<PromoValidationResult> {
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('validate_promo_code', {
+    p_code: params.code.trim().toUpperCase(),
+    p_user_id: params.userId,
+    p_service_id: params.serviceId,
+    p_service_amount: params.amount
+  })
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * List promo codes with filters and pagination (admin)
+ */
+export async function listPromoCodes(
+  filters?: PromoCodeFilters,
+  pagination?: PaginationParams
+) {
+  let query = supabase
+    .from('promo_codes')
+    .select('*', { count: 'exact' })
+
+  // Apply filters
+  if (filters?.search) {
+    query = query.or(`code.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+  }
+
+  if (filters?.status === 'active') {
+    query = query.eq('is_active', true)
+  } else if (filters?.status === 'inactive') {
+    query = query.eq('is_active', false)
+  }
+
+  if (filters?.discount_type) {
+    query = query.eq('discount_type', filters.discount_type)
+  }
+
+  if (filters?.date_from) {
+    query = query.gte('created_at', filters.date_from.toISOString())
+  }
+
+  if (filters?.date_to) {
+    query = query.lte('created_at', filters.date_to.toISOString())
+  }
+
+  // Apply sorting
+  const sortBy = filters?.sort_by || 'created_at'
+  const sortOrder = filters?.sort_order || 'desc'
+  query = query.order(sortBy, { ascending: sortOrder === 'asc' })
+
+  // Apply pagination
+  if (pagination) {
+    const offset = (pagination.page - 1) * pagination.per_page
+    query = query.range(offset, offset + pagination.per_page - 1)
+  }
+
+  const { data, error, count } = await query
+
+  if (error) throw error
+
+  return {
+    data: data || [],
+    count: count || 0
+  }
+}
+
+/**
+ * Get a single promo code by ID
+ */
+export async function getPromoCode(id: number): Promise<PromoCode> {
+  const { data, error } = await supabase
+    .from('promo_codes')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Create a new promo code (admin)
+ */
+export async function createPromoCode(
+  promo: Partial<PromoCode>
+): Promise<PromoCode> {
+  const { data, error } = await supabase
+    .from('promo_codes')
+    .insert(promo)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Update a promo code (admin)
+ */
+export async function updatePromoCode(
+  id: number,
+  updates: Partial<PromoCode>
+): Promise<PromoCode> {
+  const { data, error } = await supabase
+    .from('promo_codes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Delete a promo code (admin)
+ */
+export async function deletePromoCode(id: number): Promise<void> {
+  const { error } = await supabase
+    .from('promo_codes')
+    .delete()
+    .eq('id', id)
+    .eq('uses_count', 0)  // Safety: only delete if unused
+
+  if (error) throw error
+}
+
+/**
+ * Get promo code usage history
+ */
+export async function getPromoCodeUsage(
+  promoCodeId: number
+): Promise<PromoCodeUsage[]> {
+  const { data, error } = await supabase
+    .from('promo_code_usage')
+    .select('*')
+    .eq('promo_code_id', promoCodeId)
+    .order('used_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}

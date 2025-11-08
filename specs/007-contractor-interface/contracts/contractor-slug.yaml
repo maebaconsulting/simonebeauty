@@ -1,0 +1,514 @@
+openapi: 3.1.0
+info:
+  title: Contractor Slug API
+  description: API for managing contractor custom slugs and analytics
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /contractor-slug:
+    get:
+      summary: Get current slug
+      description: Retrieve the contractor's current slug configuration
+      operationId: getCurrentSlug
+      tags:
+        - Slug Management
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Slug configuration retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugConfiguration'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update slug
+      description: |
+        Update the contractor's slug.
+        - Validates slug format (a-z, 0-9, hyphens only)
+        - Checks uniqueness
+        - Validates against forbidden words
+        - Creates redirect from old slug (30 days)
+        - Enforces 3 changes per year limit
+      operationId: updateSlug
+      tags:
+        - Slug Management
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlugUpdateRequest'
+      responses:
+        '200':
+          description: Slug updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugUpdateResponse'
+        '400':
+          description: Invalid slug or limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Slug already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-slug/check:
+    post:
+      summary: Check slug availability
+      description: |
+        Check if a slug is available for use.
+        Returns availability status and suggestions if taken.
+      operationId: checkSlugAvailability
+      tags:
+        - Slug Management
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slug
+              properties:
+                slug:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  pattern: '^[a-z0-9-]+$'
+      responses:
+        '200':
+          description: Availability checked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugAvailabilityResponse'
+        '400':
+          description: Invalid slug format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-slug/analytics:
+    get:
+      summary: Get slug analytics
+      description: |
+        Retrieve analytics for the contractor's slug:
+        - Total visits
+        - Visits last 30 days
+        - Conversion rate
+        - Top referrers
+      operationId: getSlugAnalytics
+      tags:
+        - Slug Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [last_7_days, last_30_days, last_90_days, all_time]
+            default: last_30_days
+      responses:
+        '200':
+          description: Analytics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugAnalytics'
+
+  /contractor-slug/analytics/visits:
+    get:
+      summary: Get detailed visit logs
+      description: Retrieve paginated list of individual visits
+      operationId: getDetailedVisits
+      tags:
+        - Slug Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Visit logs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitLogsResponse'
+
+  /contractor-slug/history:
+    get:
+      summary: Get slug change history
+      description: Retrieve history of slug changes with redirect status
+      operationId: getSlugHistory
+      tags:
+        - Slug Management
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Slug history retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugHistoryResponse'
+
+  /track-slug-visit:
+    post:
+      summary: Track slug visit
+      description: |
+        Track a visit to a contractor's booking page via slug.
+        This endpoint is called by the public booking page.
+        No authentication required.
+      operationId: trackSlugVisit
+      tags:
+        - Slug Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slug
+              properties:
+                slug:
+                  type: string
+                session_id:
+                  type: string
+                  description: Client-side session ID (cookie)
+                referrer:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Visit tracked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '404':
+          description: Slug not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-slug/redirect/{slug}:
+    get:
+      summary: Resolve slug redirect
+      description: |
+        Check if slug exists or needs redirect.
+        Returns contractor info if current slug, redirect URL if old slug.
+      operationId: resolveSlugRedirect
+      tags:
+        - Slug Management
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current slug resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugResolveResponse'
+        '301':
+          description: Redirect to new slug
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+        '404':
+          description: Slug not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SlugConfiguration:
+      type: object
+      properties:
+        contractor_id:
+          type: integer
+          format: int64
+        current_slug:
+          type: string
+        full_url:
+          type: string
+          format: uri
+          description: Complete booking URL (e.g., https://simone.paris/book/marie-dupont)
+        slug_changes_count:
+          type: integer
+          description: Number of changes this year
+        slug_last_changed_at:
+          type: string
+          format: date-time
+          nullable: true
+        changes_remaining:
+          type: integer
+          description: Remaining changes this year (max 3 per year)
+        next_change_available:
+          type: string
+          format: date
+          nullable: true
+          description: Date when next change will be available if limit reached
+
+    SlugUpdateRequest:
+      type: object
+      required:
+        - new_slug
+      properties:
+        new_slug:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-z0-9-]+$'
+          description: New slug (lowercase, alphanumeric and hyphens only)
+        change_reason:
+          type: string
+          maxLength: 255
+          description: Optional reason for change
+
+    SlugUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        old_slug:
+          type: string
+        new_slug:
+          type: string
+        full_url:
+          type: string
+          format: uri
+        redirect_active_until:
+          type: string
+          format: date-time
+          description: Date until which old slug will redirect (30 days)
+        changes_remaining:
+          type: integer
+        message:
+          type: string
+
+    SlugAvailabilityResponse:
+      type: object
+      properties:
+        slug:
+          type: string
+        available:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+          enum: [available, already_taken, forbidden_word, invalid_format]
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Alternative slug suggestions if not available
+
+    SlugAnalytics:
+      type: object
+      properties:
+        contractor_id:
+          type: integer
+          format: int64
+        current_slug:
+          type: string
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+            label:
+              type: string
+        total_visits:
+          type: integer
+          description: Total unique visits (by session)
+        total_conversions:
+          type: integer
+          description: Number of visits that resulted in bookings
+        conversion_rate:
+          type: number
+          format: decimal
+          description: Conversion rate percentage
+        top_referrers:
+          type: array
+          items:
+            type: object
+            properties:
+              referrer:
+                type: string
+              visits:
+                type: integer
+          description: Top 5 referrer sources
+        visits_by_day:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              visits:
+                type: integer
+              conversions:
+                type: integer
+
+    VisitLogsResponse:
+      type: object
+      properties:
+        visits:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisitLog'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    VisitLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        slug_used:
+          type: string
+        visited_at:
+          type: string
+          format: date-time
+        referrer:
+          type: string
+          nullable: true
+        converted:
+          type: boolean
+        booking_id:
+          type: integer
+          format: int64
+          nullable: true
+        conversion_timestamp:
+          type: string
+          format: date-time
+          nullable: true
+
+    SlugHistoryResponse:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlugHistoryEntry'
+
+    SlugHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        old_slug:
+          type: string
+        new_slug:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        changed_by_admin:
+          type: boolean
+
+    SlugResolveResponse:
+      type: object
+      properties:
+        contractor_id:
+          type: integer
+          format: int64
+        current_slug:
+          type: string
+        contractor_name:
+          type: string
+        professional_title:
+          type: string
+          nullable: true
+        is_available:
+          type: boolean
+          description: Whether contractor is accepting bookings
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

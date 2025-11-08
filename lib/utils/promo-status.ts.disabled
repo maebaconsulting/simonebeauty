@@ -1,0 +1,32 @@
+/**
+ * Promo code status computation utilities
+ * Task: T007
+ */
+
+import type { PromoCode, PromoCodeStatus } from '@/types/promo-code'
+
+/**
+ * Compute promo code status from database fields
+ */
+export function getPromoCodeStatus(promo: PromoCode): PromoCodeStatus {
+  if (!promo.is_active) return 'inactive'
+
+  const now = new Date()
+
+  // Check if scheduled (not started yet)
+  if (promo.valid_from && new Date(promo.valid_from) > now) {
+    return 'scheduled'
+  }
+
+  // Check if expired
+  if (promo.valid_until && new Date(promo.valid_until) < now) {
+    return 'expired'
+  }
+
+  // Check if exhausted
+  if (promo.max_uses && promo.uses_count >= promo.max_uses) {
+    return 'exhausted'
+  }
+
+  return 'active'
+}

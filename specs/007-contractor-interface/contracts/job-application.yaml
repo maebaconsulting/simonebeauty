@@ -1,0 +1,458 @@
+openapi: 3.1.0
+info:
+  title: Job Application API
+  description: API for contractor job application submission and management
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /submit-job-application:
+    post:
+      summary: Submit contractor job application
+      description: |
+        Handles the submission of a contractor job application from the public form.
+        - Validates application data
+        - Uploads files to Supabase Storage
+        - Creates backoffice task
+        - Sends confirmation email to applicant
+        - Sends notification email to admin team
+      operationId: submitJobApplication
+      tags:
+        - Job Applications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobApplicationRequest'
+      responses:
+        '201':
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplicationResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /job-applications:
+    get:
+      summary: List all job applications
+      description: Get list of job applications with filtering (admin only)
+      operationId: listJobApplications
+      tags:
+        - Job Applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, interview_scheduled, approved, rejected]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplicationListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /job-applications/{id}:
+    get:
+      summary: Get application details
+      description: Get detailed information about a specific application (admin only)
+      operationId: getJobApplication
+      tags:
+        - Job Applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplication'
+        '404':
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Update application
+      description: Update application status, add comments, schedule interview (admin only)
+      operationId: updateJobApplication
+      tags:
+        - Job Applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobApplicationUpdate'
+      responses:
+        '200':
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplication'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /job-applications/{id}/approve:
+    post:
+      summary: Approve application and create contractor account
+      description: |
+        Approves a job application and creates a contractor account.
+        - Creates contractor profile
+        - Generates temporary credentials
+        - Sends welcome email with login details
+        - Creates onboarding status record
+      operationId: approveJobApplication
+      tags:
+        - Job Applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Application approved and contractor account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalResponse'
+        '400':
+          description: Invalid request or application already processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /job-applications/{id}/reject:
+    post:
+      summary: Reject application
+      description: Rejects a job application and sends notification to applicant
+      operationId: rejectJobApplication
+      tags:
+        - Job Applications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rejection_reason
+              properties:
+                rejection_reason:
+                  type: string
+                  minLength: 10
+                  description: Reason for rejection (minimum 10 characters)
+      responses:
+        '200':
+          description: Application rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    JobApplicationRequest:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+        - phone
+        - address
+        - profession
+        - years_of_experience
+        - specialties
+        - services_offered
+        - geographic_zones
+        - motivation
+      properties:
+        # Step 1: Personal Information
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+        address:
+          type: string
+
+        # Step 2: Professional Profile
+        profession:
+          type: string
+          maxLength: 100
+        years_of_experience:
+          type: integer
+          minimum: 0
+        diplomas:
+          type: string
+          nullable: true
+        specialties:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          description: Array of specialty IDs
+        services_offered:
+          type: string
+
+        # Step 3: Availability and Zones
+        geographic_zones:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: Array of postal codes or city names
+        preferred_schedule:
+          type: string
+          nullable: true
+        work_frequency:
+          type: string
+          enum: [full_time, part_time, occasional]
+          nullable: true
+
+        # Step 4: Motivation
+        motivation:
+          type: string
+          minLength: 100
+
+        # Step 5: Documents (file paths after upload)
+        cv_file_path:
+          type: string
+          nullable: true
+        certifications_file_paths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        portfolio_file_paths:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    JobApplicationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        application_id:
+          type: integer
+          format: int64
+        message:
+          type: string
+
+    JobApplicationListResponse:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobApplicationSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    JobApplicationSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        profession:
+          type: string
+        status:
+          type: string
+          enum: [pending, interview_scheduled, approved, rejected]
+        submitted_at:
+          type: string
+          format: date-time
+
+    JobApplication:
+      allOf:
+        - $ref: '#/components/schemas/JobApplicationRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            status:
+              type: string
+              enum: [pending, interview_scheduled, approved, rejected]
+            submitted_at:
+              type: string
+              format: date-time
+            admin_comments:
+              type: string
+              nullable: true
+            reviewed_by:
+              type: string
+              format: uuid
+              nullable: true
+            reviewed_at:
+              type: string
+              format: date-time
+              nullable: true
+            interview_date:
+              type: string
+              format: date-time
+              nullable: true
+            interview_mode:
+              type: string
+              enum: [video, phone, in_person]
+              nullable: true
+            interview_notes:
+              type: string
+              nullable: true
+            rejection_reason:
+              type: string
+              nullable: true
+
+    JobApplicationUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, interview_scheduled, approved, rejected]
+        admin_comments:
+          type: string
+        interview_date:
+          type: string
+          format: date-time
+        interview_mode:
+          type: string
+          enum: [video, phone, in_person]
+        interview_notes:
+          type: string
+
+    ApprovalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        contractor_id:
+          type: integer
+          format: int64
+        temporary_email:
+          type: string
+        message:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

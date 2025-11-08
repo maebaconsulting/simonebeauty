@@ -1,0 +1,451 @@
+openapi: 3.0.3
+info:
+  title: Ready to Go - Contractor Urgency Configuration API
+  version: 1.0.0
+  description: |
+    API pour gérer la configuration Ready to Go des prestataires
+    (opt-in, plages horaires, limites)
+
+servers:
+  - url: https://{project-ref}.supabase.co/functions/v1
+    description: Supabase Edge Functions
+    variables:
+      project-ref:
+        default: your-project-ref
+
+paths:
+  /contractor/urgency-config:
+    get:
+      summary: Obtenir la configuration Ready to Go du prestataire
+      description: |
+        Retourne la configuration actuelle (is_enabled, plages horaires, limites)
+      operationId: getContractorUrgencyConfig
+      tags:
+        - Contractor Urgency
+      responses:
+        '200':
+          description: Configuration Ready to Go
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ContractorUrgencyConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Configuration non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Mettre à jour la configuration Ready to Go
+      description: |
+        Met à jour l'activation, les plages horaires et les limites
+      operationId: updateContractorUrgencyConfig
+      tags:
+        - Contractor Urgency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isEnabled:
+                  type: boolean
+                  description: Activer/désactiver Ready to Go
+                  example: true
+                availabilitySlots:
+                  type: array
+                  description: Plages horaires d'intervention rapide
+                  items:
+                    $ref: '#/components/schemas/AvailabilitySlot'
+                maxUrgentPerWeek:
+                  type: integer
+                  description: Limite de missions urgentes par semaine
+                  minimum: 1
+                  maximum: 50
+                  example: 10
+                acceptedPostalCodes:
+                  type: array
+                  description: Codes postaux acceptés (NULL = tous)
+                  nullable: true
+                  items:
+                    type: string
+                  example: ["75001", "75002", "75008", "75016"]
+      responses:
+        '200':
+          description: Configuration mise à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ContractorUrgencyConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contractor/urgency-stats:
+    get:
+      summary: Obtenir les statistiques Ready to Go du prestataire
+      description: |
+        Retourne les statistiques personnelles : missions urgentes complétées,
+        bonus gagnés, taux d'acceptation, etc.
+      operationId: getContractorUrgencyStats
+      tags:
+        - Contractor Urgency
+      parameters:
+        - name: period
+          in: query
+          description: Période de statistiques
+          required: false
+          schema:
+            type: string
+            enum: [week, month, year, all]
+            default: month
+      responses:
+        '200':
+          description: Statistiques Ready to Go
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ContractorUrgencyStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /contractor/urgency-potential-earnings:
+    post:
+      summary: Calculer les gains potentiels Ready to Go
+      description: |
+        Calcule les bonus potentiels selon les paliers pour les services du prestataire
+      operationId: calculatePotentialEarnings
+      tags:
+        - Contractor Urgency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serviceIds:
+                  type: array
+                  description: IDs des services proposés (optionnel, tous par défaut)
+                  items:
+                    type: integer
+                    format: int64
+                  example: [42, 43, 44]
+      responses:
+        '200':
+          description: Gains potentiels calculés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      services:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServicePotentialEarnings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    ContractorUrgencyConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 456
+        contractorId:
+          type: integer
+          format: int64
+          example: 123
+        isEnabled:
+          type: boolean
+          description: Si Ready to Go est activé
+          example: true
+        availabilitySlots:
+          type: array
+          description: Plages horaires d'intervention rapide
+          items:
+            $ref: '#/components/schemas/AvailabilitySlot'
+        maxUrgentPerWeek:
+          type: integer
+          description: Limite de missions urgentes par semaine
+          example: 10
+        currentWeekUrgentCount:
+          type: integer
+          description: Nombre de missions urgentes acceptées cette semaine
+          example: 3
+        weekStartDate:
+          type: string
+          format: date
+          description: Date du début de la semaine courante
+          example: "2025-11-04"
+        acceptedPostalCodes:
+          type: array
+          nullable: true
+          description: Codes postaux acceptés (NULL = tous)
+          items:
+            type: string
+          example: ["75001", "75002", "75008"]
+        lastKnownLocation:
+          type: object
+          nullable: true
+          description: Dernière position connue pour calcul de trajet
+          properties:
+            lat:
+              type: number
+              format: double
+              example: 48.8566
+            lng:
+              type: number
+              format: double
+              example: 2.3522
+        lastLocationUpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-07T14:30:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-07T09:15:00Z"
+
+    AvailabilitySlot:
+      type: object
+      required:
+        - day
+        - start
+        - end
+      properties:
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          example: "monday"
+        start:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Heure de début (format HH:MM)
+          example: "10:00"
+        end:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Heure de fin (format HH:MM)
+          example: "18:00"
+
+    ContractorUrgencyStats:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [week, month, year, all]
+          example: "month"
+        totalUrgentBookings:
+          type: integer
+          description: Nombre total de missions urgentes complétées
+          example: 12
+        breakdownByTier:
+          type: object
+          properties:
+            express:
+              type: integer
+              example: 3
+            fast:
+              type: integer
+              example: 5
+            today:
+              type: integer
+              example: 4
+        totalBonusEarned:
+          type: number
+          format: decimal
+          description: Total des bonus perçus (en euros)
+          example: 245.00
+        averageBonusPerBooking:
+          type: number
+          format: decimal
+          example: 20.42
+        acceptanceRate:
+          type: number
+          format: float
+          description: Taux d'acceptation des notifications (%)
+          example: 87.5
+        averageResponseTimeSeconds:
+          type: integer
+          description: Temps moyen de réponse aux notifications (secondes)
+          example: 120
+        onTimeArrivalRate:
+          type: number
+          format: float
+          description: Taux d'arrivée dans les temps (%)
+          example: 95.0
+        averageSatisfactionRating:
+          type: number
+          format: float
+          description: Note moyenne de satisfaction client
+          example: 4.7
+        timeoutCount:
+          type: integer
+          description: Nombre de timeouts (pas de réponse dans les 5 min)
+          example: 2
+        refusedCount:
+          type: integer
+          description: Nombre de missions refusées
+          example: 1
+
+    ServicePotentialEarnings:
+      type: object
+      properties:
+        serviceId:
+          type: integer
+          format: int64
+          example: 42
+        serviceName:
+          type: string
+          example: "Massage Suédois 60 min"
+        basePrice:
+          type: number
+          format: decimal
+          example: 80.00
+        tiers:
+          type: object
+          properties:
+            express:
+              $ref: '#/components/schemas/TierPotentialEarning'
+            fast:
+              $ref: '#/components/schemas/TierPotentialEarning'
+            today:
+              $ref: '#/components/schemas/TierPotentialEarning'
+
+    TierPotentialEarning:
+      type: object
+      properties:
+        urgencyLevel:
+          type: string
+          enum: [express, fast, today]
+          example: "fast"
+        label:
+          type: string
+          example: "Rapide (1h-2h)"
+        surchargePercent:
+          type: number
+          format: decimal
+          example: 30.00
+        bonusAmount:
+          type: number
+          format: decimal
+          description: Bonus que vous recevrez
+          example: 12.00
+        totalYouReceive:
+          type: number
+          format: decimal
+          description: Total (prix base + bonus)
+          example: 92.00
+        clientPays:
+          type: number
+          format: decimal
+          description: Prix payé par le client
+          example: 104.00
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "INVALID_SLOT_TIME"
+            message:
+              type: string
+              example: "Heure de début doit être avant heure de fin"
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INVALID_REQUEST"
+              message: "availabilitySlots est requis"
+
+    Unauthorized:
+      description: Non authentifié ou non autorisé
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Vous devez être authentifié en tant que prestataire"
+
+    InternalError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "Une erreur est survenue"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

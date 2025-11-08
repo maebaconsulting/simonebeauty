@@ -1,0 +1,49 @@
+/**
+ * Promo code calculation utilities
+ * Task: T008
+ */
+
+import type { PromoCode } from '@/types/promo-code'
+
+/**
+ * Calculate discount amount based on promo code rules
+ */
+export function calculateDiscount(
+  promo: PromoCode,
+  serviceAmount: number
+): number {
+  if (promo.discount_type === 'percentage') {
+    const discount = (serviceAmount * promo.discount_value) / 100
+
+    // Apply max discount cap if defined
+    if (promo.max_discount_amount) {
+      return Math.min(discount, promo.max_discount_amount)
+    }
+
+    return discount
+  } else {
+    // Fixed amount - cannot exceed service amount
+    return Math.min(promo.discount_value, serviceAmount)
+  }
+}
+
+/**
+ * Calculate final amount after discount
+ */
+export function calculateFinalAmount(
+  originalAmount: number,
+  discountAmount: number
+): number {
+  return Math.max(0, originalAmount - discountAmount)
+}
+
+/**
+ * Calculate ROI percentage
+ */
+export function calculateROI(
+  revenueGenerated: number,
+  platformCost: number
+): number {
+  if (platformCost === 0) return 0
+  return ((revenueGenerated - platformCost) / platformCost) * 100
+}

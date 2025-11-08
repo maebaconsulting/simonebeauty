@@ -1,0 +1,232 @@
+openapi: 3.1.0
+info:
+  title: Promo Codes API
+  description: API for validating and applying promotional codes
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /validate-promo-code:
+    post:
+      summary: Validate promo code
+      description: |
+        Validates a promotional code and calculates applicable discount.
+        - Checks code existence and active status
+        - Verifies validity dates
+        - Validates minimum purchase requirements
+        - Checks usage limits (global and per-user)
+        - Validates service applicability
+        - Returns discount amount if valid
+      operationId: validatePromoCode
+      tags:
+        - Promo Codes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoCodeValidationRequest'
+      responses:
+        '200':
+          description: Promo code validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCodeValidationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /apply-promo-code:
+    post:
+      summary: Apply promo code to booking
+      description: |
+        Records promo code usage for a confirmed booking.
+        - Creates usage record
+        - Increments usage count
+        - Links to booking for audit trail
+      operationId: applyPromoCode
+      tags:
+        - Promo Codes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - promoCodeId
+                - bookingId
+                - discountApplied
+                - originalAmount
+                - finalAmount
+              properties:
+                promoCodeId:
+                  type: integer
+                  format: int64
+                  example: 5
+                bookingId:
+                  type: integer
+                  format: int64
+                  example: 789
+                discountApplied:
+                  type: number
+                  format: float
+                  example: 8.00
+                originalAmount:
+                  type: number
+                  format: float
+                  example: 80.00
+                finalAmount:
+                  type: number
+                  format: float
+                  example: 72.00
+      responses:
+        '201':
+          description: Promo code applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - usageId
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  usageId:
+                    type: integer
+                    format: int64
+                    example: 123
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PromoCodeValidationRequest:
+      type: object
+      required:
+        - code
+        - userId
+        - cartTotal
+        - serviceIds
+      properties:
+        code:
+          type: string
+          description: Promo code to validate (case-insensitive)
+          example: "WELCOME10"
+        userId:
+          type: string
+          format: uuid
+          description: User ID to check per-user usage limits
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        cartTotal:
+          type: number
+          format: float
+          description: Total cart amount before discount
+          example: 80.00
+        serviceIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs of services in cart
+          example: [1, 2]
+
+    PromoCodeValidationResponse:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+          description: Whether the promo code is valid
+          example: true
+        discount:
+          type: number
+          format: float
+          description: Discount amount in euros (only if valid)
+          example: 8.00
+        promoCodeId:
+          type: integer
+          format: int64
+          description: ID of the promo code (only if valid)
+          example: 5
+        message:
+          type: string
+          description: Success or error message
+          example: "Réduction de 8.00€ appliquée"
+        promoDetails:
+          type: object
+          description: Additional promo code details (only if valid)
+          properties:
+            code:
+              type: string
+              example: "WELCOME10"
+            discountType:
+              type: string
+              enum: [percentage, fixed_amount]
+              example: "percentage"
+            discountValue:
+              type: number
+              format: float
+              example: 10.0
+            remainingUses:
+              type: integer
+              description: Remaining uses before limit reached (null if unlimited)
+              example: 995
+        errorCode:
+          type: string
+          description: Error code if invalid
+          enum:
+            - CODE_NOT_FOUND
+            - CODE_EXPIRED
+            - MINIMUM_NOT_MET
+            - USAGE_LIMIT_REACHED
+            - USER_LIMIT_REACHED
+            - SERVICE_NOT_APPLICABLE
+          example: "MINIMUM_NOT_MET"
+        errorDetails:
+          type: object
+          description: Additional error context
+          properties:
+            minimumRequired:
+              type: number
+              format: float
+              example: 50.00
+            currentTotal:
+              type: number
+              format: float
+              example: 40.00
+            amountNeeded:
+              type: number
+              format: float
+              example: 10.00
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          example: "Code and userId are required"

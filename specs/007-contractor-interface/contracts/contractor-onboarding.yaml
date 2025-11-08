@@ -1,0 +1,357 @@
+openapi: 3.1.0
+info:
+  title: Contractor Onboarding API
+  description: API for contractor profile setup and Stripe Connect onboarding
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /contractor-onboarding/status:
+    get:
+      summary: Get onboarding status
+      description: Retrieve the current onboarding status for the authenticated contractor
+      operationId: getOnboardingStatus
+      tags:
+        - Onboarding
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Onboarding status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-onboarding/profile:
+    post:
+      summary: Complete profile setup
+      description: Complete the contractor profile setup step of onboarding
+      operationId: completeProfileSetup
+      tags:
+        - Onboarding
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileSetupRequest'
+      responses:
+        '200':
+          description: Profile setup completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingStepResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-onboarding/schedule:
+    post:
+      summary: Configure work schedule
+      description: Set up weekly work schedule for the contractor
+      operationId: configureSchedule
+      tags:
+        - Onboarding
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleSetupRequest'
+      responses:
+        '200':
+          description: Schedule configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingStepResponse'
+        '400':
+          description: Invalid schedule data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-onboarding/stripe-connect:
+    post:
+      summary: Initiate Stripe Connect onboarding
+      description: |
+        Creates a Stripe Connect Express account and returns the onboarding link.
+        The contractor will be redirected to Stripe to complete KYC and bank details.
+      operationId: initiateStripeConnect
+      tags:
+        - Onboarding
+        - Stripe
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Stripe Connect account link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StripeConnectLinkResponse'
+        '400':
+          description: Account already exists or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Stripe API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: Get Stripe Connect status
+      description: Retrieve the current Stripe Connect account status
+      operationId: getStripeConnectStatus
+      tags:
+        - Onboarding
+        - Stripe
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Stripe Connect status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StripeConnectStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-onboarding/stripe-refresh:
+    post:
+      summary: Refresh Stripe Connect onboarding link
+      description: Generate a new onboarding link if the previous one expired
+      operationId: refreshStripeConnectLink
+      tags:
+        - Onboarding
+        - Stripe
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: New onboarding link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StripeConnectLinkResponse'
+        '400':
+          description: Account not found or already complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    OnboardingStatus:
+      type: object
+      properties:
+        contractor_id:
+          type: integer
+          format: int64
+        account_created:
+          type: boolean
+        schedule_configured:
+          type: boolean
+        stripe_connect_completed:
+          type: boolean
+        profile_completed:
+          type: boolean
+        completion_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        is_completed:
+          type: boolean
+        schedule_configured_at:
+          type: string
+          format: date-time
+          nullable: true
+        stripe_connect_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        profile_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProfileSetupRequest:
+      type: object
+      required:
+        - bio
+        - professional_title
+        - specialties
+      properties:
+        bio:
+          type: string
+          maxLength: 500
+        professional_title:
+          type: string
+          maxLength: 200
+        years_of_experience:
+          type: integer
+          minimum: 0
+        specialties:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+        service_area_center:
+          type: string
+          description: Base address for service area
+        service_radius_km:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        postal_codes:
+          type: array
+          items:
+            type: string
+
+    ScheduleSetupRequest:
+      type: object
+      required:
+        - schedules
+      properties:
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklySchedule'
+          minItems: 1
+
+    WeeklySchedule:
+      type: object
+      required:
+        - day_of_week
+        - start_time
+        - end_time
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        start_time:
+          type: string
+          format: time
+          example: "09:00:00"
+        end_time:
+          type: string
+          format: time
+          example: "18:00:00"
+        is_recurring:
+          type: boolean
+          default: true
+        effective_from:
+          type: string
+          format: date
+          nullable: true
+        effective_until:
+          type: string
+          format: date
+          nullable: true
+
+    OnboardingStepResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        step_completed:
+          type: string
+          enum: [profile, schedule, stripe_connect]
+        onboarding_status:
+          $ref: '#/components/schemas/OnboardingStatus'
+
+    StripeConnectLinkResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Stripe Connect onboarding URL
+        expires_at:
+          type: integer
+          description: Unix timestamp when the link expires
+
+    StripeConnectStatus:
+      type: object
+      properties:
+        account_id:
+          type: string
+          nullable: true
+        onboarding_status:
+          type: string
+          enum: [not_started, pending, completed]
+        details_submitted:
+          type: boolean
+        charges_enabled:
+          type: boolean
+        payouts_enabled:
+          type: boolean
+        requirements:
+          type: object
+          properties:
+            currently_due:
+              type: array
+              items:
+                type: string
+            eventually_due:
+              type: array
+              items:
+                type: string
+            past_due:
+              type: array
+              items:
+                type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

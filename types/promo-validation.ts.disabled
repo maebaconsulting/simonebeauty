@@ -1,0 +1,40 @@
+/**
+ * Validation types for Promo Code system
+ * Task: T003
+ */
+
+import type { DiscountType } from './promo-code'
+
+/**
+ * Parameters for promo code validation
+ */
+export interface ValidatePromoParams {
+  code: string
+  userId: string
+  serviceId: number
+  amount: number
+}
+
+/**
+ * Result from validate_promo_code() SQL function
+ */
+export interface PromoValidationResult {
+  is_valid: boolean
+  promo_id: number | null
+  discount_amount: number | null
+  final_amount: number | null
+  error_message: string | null
+}
+
+/**
+ * Applied promo code state (UI)
+ */
+export interface AppliedPromo {
+  code: string
+  promo_id: number
+  original_amount: number
+  discount_amount: number
+  final_amount: number
+  discount_type: DiscountType
+  discount_value: number
+}

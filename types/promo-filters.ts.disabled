@@ -1,0 +1,38 @@
+/**
+ * Filter and pagination types for Promo Code system
+ * Task: T006
+ */
+
+import type { PromoCodeStatus, DiscountType } from './promo-code'
+
+/**
+ * Filters for admin promo code list
+ */
+export interface PromoCodeFilters {
+  search?: string  // Search by code or description
+  status?: PromoCodeStatus
+  discount_type?: DiscountType
+  date_from?: Date
+  date_to?: Date
+  sort_by?: 'created_at' | 'uses_count' | 'code' | 'valid_until'
+  sort_order?: 'asc' | 'desc'
+}
+
+/**
+ * Pagination params
+ */
+export interface PaginationParams {
+  page: number
+  per_page: number
+}
+
+/**
+ * Paginated response
+ */
+export interface PaginatedResponse<T> {
+  data: T[]
+  total_count: number
+  page: number
+  per_page: number
+  total_pages: number
+}

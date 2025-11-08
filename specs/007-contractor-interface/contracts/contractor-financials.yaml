@@ -1,0 +1,485 @@
+openapi: 3.1.0
+info:
+  title: Contractor Financials API
+  description: API for contractor financial dashboard, revenue tracking, and tips management
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /contractor-financials/summary:
+    get:
+      summary: Get financial summary
+      description: |
+        Retrieve financial summary for the authenticated contractor.
+        Includes service revenue, tips received, and total net earnings.
+        Tips are always displayed separately with Stripe fees deducted.
+      operationId: getFinancialSummary
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [current_month, last_month, current_year, custom]
+            default: current_month
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Required if period=custom
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Required if period=custom
+      responses:
+        '200':
+          description: Financial summary retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-financials/transactions:
+    get:
+      summary: Get transaction history
+      description: |
+        Retrieve detailed transaction history with itemized breakdown.
+        Each transaction shows:
+        - Service: gross, commission, Stripe fees (if applicable), net
+        - Tip: gross, Stripe fees (always deducted), net
+        - Total net amount
+      operationId: getTransactionHistory
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Transaction history retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistoryResponse'
+
+  /contractor-financials/transactions/{id}:
+    get:
+      summary: Get transaction details
+      description: Retrieve detailed breakdown of a specific transaction
+      operationId: getTransactionDetails
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Booking ID
+      responses:
+        '200':
+          description: Transaction details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDetail'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-financials/export:
+    get:
+      summary: Export financial history
+      description: Export transaction history as CSV file
+      operationId: exportFinancialHistory
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: CSV file generated
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-financials/payouts:
+    get:
+      summary: Get upcoming payouts
+      description: Retrieve upcoming Stripe payouts with estimated transfer dates
+      operationId: getUpcomingPayouts
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Upcoming payouts retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutsResponse'
+
+  /contractor-financials/tips-stats:
+    get:
+      summary: Get tips statistics
+      description: |
+        Retrieve tips statistics for the contractor:
+        - Total tips received
+        - Number of bookings with tips
+        - Tip rate percentage
+        - Average tip amount
+      operationId: getTipsStatistics
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [current_month, last_month, current_year, all_time]
+            default: current_month
+      responses:
+        '200':
+          description: Tips statistics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipsStatistics'
+
+  /contractor-financials/contract:
+    get:
+      summary: Get financial contract details
+      description: |
+        Retrieve the contractor's financial contract details:
+        - Commission rate
+        - Who pays Stripe fees (contractor or platform)
+        - Tip policy
+      operationId: getContractDetails
+      tags:
+        - Financials
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Contract details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContractDetails'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FinancialSummary:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+            label:
+              type: string
+        revenue_service:
+          type: number
+          format: decimal
+          description: Net revenue from services after commission and Stripe fees
+        revenue_tips:
+          type: number
+          format: decimal
+          description: Net tips after Stripe fees (always deducted from tips)
+        total_net:
+          type: number
+          format: decimal
+          description: Total net earnings (service + tips)
+        total_bookings:
+          type: integer
+          description: Total number of completed bookings
+        bookings_with_tips:
+          type: integer
+          description: Number of bookings that received tips
+        tip_rate_percentage:
+          type: number
+          format: decimal
+          description: Percentage of bookings that received tips
+        average_tip_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Average tip amount (gross)
+
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    TransactionSummary:
+      type: object
+      properties:
+        booking_id:
+          type: integer
+          format: int64
+        completed_at:
+          type: string
+          format: date-time
+        client_name:
+          type: string
+        service_name:
+          type: string
+        service_net:
+          type: number
+          format: decimal
+          description: Net amount from service
+        tip_net:
+          type: number
+          format: decimal
+          description: Net amount from tip (0 if no tip)
+        total_net:
+          type: number
+          format: decimal
+          description: Total net amount (service + tip)
+
+    TransactionDetail:
+      type: object
+      properties:
+        booking_id:
+          type: integer
+          format: int64
+        completed_at:
+          type: string
+          format: date-time
+        client_name:
+          type: string
+        service_name:
+          type: string
+
+        # Service breakdown
+        service_gross:
+          type: number
+          format: decimal
+        service_commission:
+          type: number
+          format: decimal
+        service_stripe_fee:
+          type: number
+          format: decimal
+          description: Stripe fee on service (only if contractor pays fees)
+        service_net:
+          type: number
+          format: decimal
+
+        # Tip breakdown (only if tip > 0)
+        tip_gross:
+          type: number
+          format: decimal
+          nullable: true
+        tip_stripe_fee:
+          type: number
+          format: decimal
+          nullable: true
+          description: Stripe fee on tip (always deducted from tip)
+        tip_net:
+          type: number
+          format: decimal
+          nullable: true
+
+        # Total
+        total_net:
+          type: number
+          format: decimal
+
+        # Contract info
+        commission_rate:
+          type: number
+          format: decimal
+          description: Commission rate applied (e.g., 15.00 = 15%)
+        contractor_pays_stripe_fees:
+          type: boolean
+          description: Whether contractor pays Stripe fees on service
+
+    PayoutsResponse:
+      type: object
+      properties:
+        upcoming_payouts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payout'
+        total_pending:
+          type: number
+          format: decimal
+
+    Payout:
+      type: object
+      properties:
+        booking_id:
+          type: integer
+          format: int64
+          nullable: true
+        type:
+          type: string
+          enum: [service, tip]
+        amount:
+          type: number
+          format: decimal
+        estimated_arrival:
+          type: string
+          format: date
+          description: Estimated date of Stripe payout
+        status:
+          type: string
+          enum: [pending, in_transit, paid]
+
+    TipsStatistics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+            label:
+              type: string
+        total_tips_received:
+          type: number
+          format: decimal
+          description: Total net tips received (after Stripe fees)
+        total_bookings:
+          type: integer
+        bookings_with_tips:
+          type: integer
+        tip_rate_percentage:
+          type: number
+          format: decimal
+          description: Percentage of bookings that received tips
+        average_tip_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Average tip amount (gross)
+        highest_tip:
+          type: number
+          format: decimal
+          nullable: true
+        lowest_tip:
+          type: number
+          format: decimal
+          nullable: true
+
+    ContractDetails:
+      type: object
+      properties:
+        contractor_id:
+          type: integer
+          format: int64
+        commission_rate:
+          type: number
+          format: decimal
+          description: Commission rate percentage (e.g., 15.00 = 15%)
+        contractor_pays_stripe_fees:
+          type: boolean
+          description: Whether contractor pays Stripe fees on service payments
+        tip_policy:
+          type: string
+          description: "Les pourboires sont transférés à 100% (après frais Stripe)"
+        contract_notes:
+          type: string
+          nullable: true
+          description: Additional contract terms or notes
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

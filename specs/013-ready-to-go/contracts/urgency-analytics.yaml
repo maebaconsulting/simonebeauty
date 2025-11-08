@@ -1,0 +1,649 @@
+openapi: 3.0.3
+info:
+  title: Ready to Go - Analytics API
+  version: 1.0.0
+  description: |
+    API pour les analytics et métriques du service Ready to Go
+    (performance, conversion, revenus)
+
+servers:
+  - url: https://{project-ref}.supabase.co/functions/v1
+    description: Supabase Edge Functions
+    variables:
+      project-ref:
+        default: your-project-ref
+
+paths:
+  /admin/urgency-dashboard:
+    get:
+      summary: Obtenir le dashboard Ready to Go complet
+      description: |
+        Retourne toutes les métriques principales pour le dashboard admin
+      operationId: getUrgencyDashboard
+      tags:
+        - Analytics
+      parameters:
+        - name: period
+          in: query
+          description: Période d'analyse
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 365d]
+            default: 30d
+      responses:
+        '200':
+          description: Dashboard Ready to Go
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UrgencyDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Accès réservé aux administrateurs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/urgency-performance-by-tier:
+    get:
+      summary: Performance détaillée par palier
+      description: |
+        Retourne les métriques de performance pour chaque palier (Express, Rapide, Aujourd'hui)
+      operationId: getPerformanceByTier
+      tags:
+        - Analytics
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 365d]
+            default: 30d
+      responses:
+        '200':
+          description: Performance par palier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      express:
+                        $ref: '#/components/schemas/TierPerformance'
+                      fast:
+                        $ref: '#/components/schemas/TierPerformance'
+                      today:
+                        $ref: '#/components/schemas/TierPerformance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/urgency-revenue-breakdown:
+    get:
+      summary: Répartition des revenus Ready to Go
+      description: |
+        Analyse des revenus avec répartition prestataires/plateforme par période
+      operationId: getRevenueBreakdown
+      tags:
+        - Analytics
+      parameters:
+        - name: groupBy
+          in: query
+          description: Regroupement des données
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: month
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-10-01"
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-11-07"
+      responses:
+        '200':
+          description: Répartition des revenus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      periods:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RevenuePeriod'
+                      totals:
+                        $ref: '#/components/schemas/RevenueTotals'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/urgency-contractor-rankings:
+    get:
+      summary: Classement des prestataires Ready to Go
+      description: |
+        Retourne le classement des prestataires par performance Ready to Go
+      operationId: getContractorRankings
+      tags:
+        - Analytics
+      parameters:
+        - name: orderBy
+          in: query
+          description: Critère de classement
+          required: false
+          schema:
+            type: string
+            enum: [bonus_earned, bookings_count, acceptance_rate, satisfaction_rating]
+            default: bonus_earned
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 365d, all]
+            default: 30d
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Classement des prestataires
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      rankings:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ContractorRanking'
+                      total:
+                        type: integer
+                        example: 87
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/urgency-conversion-funnel:
+    get:
+      summary: Tunnel de conversion Ready to Go
+      description: |
+        Analyse du parcours client pour les réservations urgentes
+      operationId: getConversionFunnel
+      tags:
+        - Analytics
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Tunnel de conversion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ConversionFunnel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    UrgencyDashboard:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "30d"
+        overview:
+          type: object
+          properties:
+            totalRequests:
+              type: integer
+              description: Nombre total de demandes urgentes
+              example: 245
+            successfulBookings:
+              type: integer
+              description: Réservations complétées avec succès
+              example: 208
+            conversionRate:
+              type: number
+              format: float
+              description: Taux de conversion global (%)
+              example: 84.9
+            totalRevenue:
+              type: number
+              format: decimal
+              description: Revenu total (surcharges)
+              example: 7350.00
+            contractorBonuses:
+              type: number
+              format: decimal
+              description: Total bonus prestataires
+              example: 3675.00
+            platformRevenue:
+              type: number
+              format: decimal
+              description: Revenu plateforme
+              example: 3675.00
+        tierBreakdown:
+          type: object
+          properties:
+            express:
+              $ref: '#/components/schemas/TierSummary'
+            fast:
+              $ref: '#/components/schemas/TierSummary'
+            today:
+              $ref: '#/components/schemas/TierSummary'
+        activeContractors:
+          type: integer
+          description: Nombre de prestataires Ready to Go actifs
+          example: 42
+        averageResponseTime:
+          type: integer
+          description: Temps moyen de réponse (secondes)
+          example: 135
+        onTimeArrivalRate:
+          type: number
+          format: float
+          description: Taux d'arrivée à l'heure (%)
+          example: 92.5
+        averageSatisfaction:
+          type: number
+          format: float
+          description: Satisfaction client moyenne
+          example: 4.6
+
+    TierSummary:
+      type: object
+      properties:
+        label:
+          type: string
+          example: "Rapide (1h-2h)"
+        requestCount:
+          type: integer
+          example: 110
+        successCount:
+          type: integer
+          example: 95
+        conversionRate:
+          type: number
+          format: float
+          example: 86.4
+        percentOfTotal:
+          type: number
+          format: float
+          example: 44.9
+
+    TierPerformance:
+      type: object
+      properties:
+        urgencyLevel:
+          type: string
+          enum: [express, fast, today]
+          example: "fast"
+        label:
+          type: string
+          example: "Rapide (1h-2h)"
+        totalRequests:
+          type: integer
+          example: 110
+        successfulBookings:
+          type: integer
+          example: 95
+        timeoutCount:
+          type: integer
+          example: 8
+        noContractorCount:
+          type: integer
+          example: 5
+        clientCancelCount:
+          type: integer
+          example: 2
+        conversionRate:
+          type: number
+          format: float
+          example: 86.4
+        averageResponseTime:
+          type: integer
+          description: Secondes
+          example: 125
+        medianResponseTime:
+          type: integer
+          example: 90
+        averageContractorAttempts:
+          type: number
+          format: float
+          example: 1.2
+        onTimeArrivalCount:
+          type: integer
+          example: 88
+        onTimeArrivalRate:
+          type: number
+          format: float
+          example: 92.6
+        averageSatisfaction:
+          type: number
+          format: float
+          example: 4.7
+        totalSurcharge:
+          type: number
+          format: decimal
+          example: 2640.00
+        totalContractorBonus:
+          type: number
+          format: decimal
+          example: 1320.00
+        totalPlatformRevenue:
+          type: number
+          format: decimal
+          example: 1320.00
+
+    RevenuePeriod:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Label de la période (date ou semaine)
+          example: "2025-11"
+        express:
+          $ref: '#/components/schemas/TierRevenue'
+        fast:
+          $ref: '#/components/schemas/TierRevenue'
+        today:
+          $ref: '#/components/schemas/TierRevenue'
+        total:
+          type: number
+          format: decimal
+          example: 7350.00
+
+    TierRevenue:
+      type: object
+      properties:
+        bookingCount:
+          type: integer
+          example: 45
+        totalBasePrices:
+          type: number
+          format: decimal
+          example: 3600.00
+        totalSurcharge:
+          type: number
+          format: decimal
+          example: 1080.00
+        contractorBonus:
+          type: number
+          format: decimal
+          example: 540.00
+        platformRevenue:
+          type: number
+          format: decimal
+          example: 540.00
+        averageSurcharge:
+          type: number
+          format: decimal
+          example: 24.00
+
+    RevenueTotals:
+      type: object
+      properties:
+        totalBookings:
+          type: integer
+          example: 245
+        totalBasePrices:
+          type: number
+          format: decimal
+          example: 19600.00
+        totalSurcharge:
+          type: number
+          format: decimal
+          example: 7350.00
+        totalContractorBonus:
+          type: number
+          format: decimal
+          example: 3675.00
+        totalPlatformRevenue:
+          type: number
+          format: decimal
+          example: 3675.00
+
+    ContractorRanking:
+      type: object
+      properties:
+        rank:
+          type: integer
+          example: 1
+        contractorId:
+          type: integer
+          format: int64
+          example: 123
+        contractorName:
+          type: string
+          example: "Marie Dupont"
+        totalUrgentBookings:
+          type: integer
+          example: 28
+        successfulBookings:
+          type: integer
+          example: 26
+        totalBonusEarned:
+          type: number
+          format: decimal
+          example: 520.00
+        acceptanceRate:
+          type: number
+          format: float
+          example: 92.9
+        averageResponseTime:
+          type: integer
+          example: 85
+        onTimeRate:
+          type: number
+          format: float
+          example: 96.2
+        averageSatisfaction:
+          type: number
+          format: float
+          example: 4.9
+        timeoutCount:
+          type: integer
+          example: 1
+        refusedCount:
+          type: integer
+          example: 1
+
+    ConversionFunnel:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "30d"
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step:
+                type: string
+                example: "urgency_mode_activated"
+              label:
+                type: string
+                example: "Mode urgence activé"
+              count:
+                type: integer
+                example: 320
+              percentage:
+                type: number
+                format: float
+                example: 100.0
+              dropoff:
+                type: integer
+                example: 0
+        byTier:
+          type: object
+          properties:
+            express:
+              type: object
+              properties:
+                requestsStarted:
+                  type: integer
+                  example: 64
+                requestsCompleted:
+                  type: integer
+                  example: 52
+                conversionRate:
+                  type: number
+                  format: float
+                  example: 81.3
+            fast:
+              type: object
+              properties:
+                requestsStarted:
+                  type: integer
+                  example: 144
+                requestsCompleted:
+                  type: integer
+                  example: 128
+                conversionRate:
+                  type: number
+                  format: float
+                  example: 88.9
+            today:
+              type: object
+              properties:
+                requestsStarted:
+                  type: integer
+                  example: 112
+                requestsCompleted:
+                  type: integer
+                  example: 98
+                conversionRate:
+                  type: number
+                  format: float
+                  example: 87.5
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "FORBIDDEN"
+            message:
+              type: string
+              example: "Accès réservé aux administrateurs"
+
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Token d'authentification manquant ou invalide"
+
+    Forbidden:
+      description: Accès interdit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "FORBIDDEN"
+              message: "Accès réservé aux administrateurs"
+
+    InternalError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "Une erreur est survenue"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

@@ -1,0 +1,379 @@
+openapi: 3.1.0
+info:
+  title: Booking Payment API
+  description: API for creating and managing booking payments via Stripe
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /create-booking-payment:
+    post:
+      summary: Create booking with payment pre-authorization
+      description: |
+        Creates a booking and Stripe PaymentIntent with manual capture.
+        - Validates slot availability (race condition check)
+        - Creates booking record with status 'pending'
+        - Creates Stripe PaymentIntent with capture_method: manual
+        - Applies promo codes and gift cards
+        - Returns client secret for payment confirmation
+        - Sends confirmation email
+        - Tracks slug analytics conversion if applicable
+      operationId: createBookingPayment
+      tags:
+        - Booking Payment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingPaymentRequest'
+      responses:
+        '201':
+          description: Booking and payment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBookingPaymentResponse'
+        '400':
+          description: Invalid request or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Slot conflict (already booked)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /capture-booking-payment:
+    post:
+      summary: Capture pre-authorized payment
+      description: |
+        Captures the pre-authorized payment after contractor confirms.
+        - Retrieves PaymentIntent from booking
+        - Captures payment amount
+        - Updates booking payment_status to 'captured'
+        - Triggers payout to contractor
+        - Logs action in service_action_logs
+      operationId: captureBookingPayment
+      tags:
+        - Booking Payment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+              properties:
+                bookingId:
+                  type: integer
+                  format: int64
+                  example: 789
+                amountToCapture:
+                  type: number
+                  format: float
+                  description: Optional - Amount to capture if different from authorized amount
+                  example: 72.00
+      responses:
+        '200':
+          description: Payment captured successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - paymentIntentId
+                  - amountCaptured
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  paymentIntentId:
+                    type: string
+                    example: "pi_1234567890abcdef"
+                  amountCaptured:
+                    type: number
+                    format: float
+                    example: 72.00
+        '400':
+          description: Invalid request or payment cannot be captured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /refund-booking-payment:
+    post:
+      summary: Refund booking payment
+      description: |
+        Refunds a booking payment based on cancellation policy.
+        - Calculates refund amount based on time until booking
+        - Creates Stripe refund
+        - Updates booking status to 'refunded'
+        - Logs refund reason
+      operationId: refundBookingPayment
+      tags:
+        - Booking Payment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookingId
+                - reason
+              properties:
+                bookingId:
+                  type: integer
+                  format: int64
+                  example: 789
+                reason:
+                  type: string
+                  enum:
+                    - client_cancellation
+                    - contractor_cancellation
+                    - admin_cancellation
+                    - service_issue
+                  example: "client_cancellation"
+                customRefundAmount:
+                  type: number
+                  format: float
+                  description: Optional - Override calculated refund amount (admin only)
+                  example: 40.00
+      responses:
+        '200':
+          description: Refund processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - refundId
+                  - refundAmount
+                  - refundPercentage
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  refundId:
+                    type: string
+                    example: "re_1234567890abcdef"
+                  refundAmount:
+                    type: number
+                    format: float
+                    example: 56.00
+                  refundPercentage:
+                    type: integer
+                    description: Percentage refunded based on cancellation policy
+                    example: 70
+                  message:
+                    type: string
+                    example: "Remboursement de 70% effectué (56.00€)"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreateBookingPaymentRequest:
+      type: object
+      required:
+        - serviceId
+        - contractorId
+        - scheduledStart
+        - scheduledEnd
+        - serviceAddressData
+      properties:
+        serviceId:
+          type: integer
+          format: int64
+          example: 1
+        contractorId:
+          type: integer
+          format: int64
+          example: 123
+        scheduledStart:
+          type: string
+          format: date-time
+          example: "2024-11-07T14:00:00Z"
+        scheduledEnd:
+          type: string
+          format: date-time
+          example: "2024-11-07T15:00:00Z"
+        serviceAddressId:
+          type: integer
+          format: int64
+          description: ID of saved address (if using saved address)
+          example: 45
+        serviceAddressData:
+          type: object
+          description: Address data (required if not using saved address)
+          properties:
+            streetAddress:
+              type: string
+              example: "15 rue de Rivoli"
+            city:
+              type: string
+              example: "Paris"
+            postalCode:
+              type: string
+              example: "75001"
+            latitude:
+              type: number
+              format: float
+              example: 48.8606
+            longitude:
+              type: number
+              format: float
+              example: 2.3376
+            deliveryInstructions:
+              type: string
+              example: "Code: 1234A, 3ème étage"
+        additionalServiceIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs of additional services
+          example: [5, 7]
+        promoCodeId:
+          type: integer
+          format: int64
+          description: ID of validated promo code
+          example: 8
+        promoDiscount:
+          type: number
+          format: float
+          description: Discount amount from promo code
+          example: 8.00
+        giftCardId:
+          type: integer
+          format: int64
+          description: ID of gift card to apply
+          example: 42
+        giftCardAmount:
+          type: number
+          format: float
+          description: Amount to deduct from gift card
+          example: 30.00
+        sessionId:
+          type: string
+          description: Booking session ID for analytics tracking
+          example: "sess_abcd1234"
+        bookedViaContractorSlug:
+          type: boolean
+          description: True if booked via /book/:slug
+          default: false
+          example: true
+        contractorSlugUsed:
+          type: string
+          description: Slug used for booking (if applicable)
+          example: "marie-dupont-massage"
+
+    CreateBookingPaymentResponse:
+      type: object
+      required:
+        - success
+        - bookingId
+        - paymentIntentId
+        - clientSecret
+        - finalPrice
+      properties:
+        success:
+          type: boolean
+          example: true
+        bookingId:
+          type: integer
+          format: int64
+          example: 789
+        paymentIntentId:
+          type: string
+          description: Stripe PaymentIntent ID
+          example: "pi_1234567890abcdef"
+        clientSecret:
+          type: string
+          description: Client secret for Stripe.js confirmation
+          example: "pi_1234567890abcdef_secret_abcdefghijklmnop"
+        finalPrice:
+          type: number
+          format: float
+          description: Final amount to be charged (after discounts)
+          example: 42.00
+        priceBreakdown:
+          type: object
+          properties:
+            basePrice:
+              type: number
+              format: float
+              example: 80.00
+            additionalServicesPrice:
+              type: number
+              format: float
+              example: 0.00
+            promoDiscount:
+              type: number
+              format: float
+              example: 8.00
+            subtotalAfterPromo:
+              type: number
+              format: float
+              example: 72.00
+            giftCardAmount:
+              type: number
+              format: float
+              example: 30.00
+            finalPrice:
+              type: number
+              format: float
+              example: 42.00
+        bookingDetails:
+          type: object
+          properties:
+            serviceName:
+              type: string
+              example: "Massage Suédois 60min"
+            contractorName:
+              type: string
+              example: "Marie Dupont"
+            scheduledStart:
+              type: string
+              format: date-time
+              example: "2024-11-07T14:00:00Z"
+            address:
+              type: string
+              example: "15 rue de Rivoli, 75001 Paris"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "SLOT_CONFLICT"
+        message:
+          type: string
+          example: "Ce créneau vient d'être réservé par un autre client"
+        details:
+          type: object
+          additionalProperties: true

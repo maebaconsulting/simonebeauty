@@ -1,0 +1,449 @@
+openapi: 3.1.0
+info:
+  title: Contractor Bookings API
+  description: API for contractors to manage booking requests and mark services as completed
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /contractor-bookings/requests:
+    get:
+      summary: Get pending booking requests
+      description: Retrieve all pending booking requests awaiting contractor validation
+      operationId: getPendingBookingRequests
+      tags:
+        - Booking Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, refused, expired]
+            default: pending
+      responses:
+        '200':
+          description: Booking requests retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingRequestListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-bookings/requests/{id}/accept:
+    post:
+      summary: Accept booking request
+      description: |
+        Accept a booking request and confirm the booking.
+        - Validates Stripe Connect account is active
+        - Captures the pre-authorized payment
+        - Updates booking status to confirmed
+        - Sends confirmation notification to client
+      operationId: acceptBookingRequest
+      tags:
+        - Booking Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Booking request ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contractor_message:
+                  type: string
+                  maxLength: 500
+                  description: Optional message to the client
+      responses:
+        '200':
+          description: Booking request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingRequestActionResponse'
+        '400':
+          description: Invalid request or Stripe Connect not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Booking request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-bookings/requests/{id}/refuse:
+    post:
+      summary: Refuse booking request
+      description: |
+        Refuse a booking request.
+        - Cancels the pre-authorized payment
+        - Updates booking status to cancelled
+        - Sends refusal notification to client with reason
+      operationId: refuseBookingRequest
+      tags:
+        - Booking Requests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refusal_reason
+              properties:
+                refusal_reason:
+                  type: string
+                  minLength: 10
+                  maxLength: 255
+                  description: Reason for refusing the booking
+                contractor_message:
+                  type: string
+                  maxLength: 500
+                  description: Optional detailed message to the client
+      responses:
+        '200':
+          description: Booking request refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingRequestActionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Booking request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-bookings:
+    get:
+      summary: Get contractor bookings
+      description: Retrieve all bookings for the authenticated contractor with filtering
+      operationId: getContractorBookings
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [confirmed, in_progress, completed_by_contractor, completed, cancelled]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Bookings retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingListResponse'
+
+  /contractor-bookings/{id}:
+    get:
+      summary: Get booking details
+      description: Retrieve detailed information about a specific booking
+      operationId: getBookingDetails
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Booking details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-bookings/{id}/complete:
+    post:
+      summary: Mark service as completed
+      description: |
+        Mark a booking as completed by the contractor.
+        - Changes status from in_progress to completed_by_contractor
+        - Does NOT trigger payment capture (handled separately)
+        - Logs action in service_action_logs
+        - Sends notification to client
+      operationId: markBookingCompleted
+      tags:
+        - Bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  maxLength: 500
+                  description: Optional notes about the service completion
+      responses:
+        '200':
+          description: Booking marked as completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCompletionResponse'
+        '400':
+          description: Invalid request or booking not in_progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BookingRequestListResponse:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingRequestSummary'
+        total:
+          type: integer
+
+    BookingRequestSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        booking_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [pending, accepted, refused, expired]
+        requested_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        booking:
+          $ref: '#/components/schemas/BookingSummary'
+
+    BookingSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        service_name:
+          type: string
+        client_name:
+          type: string
+        scheduled_date:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        address:
+          type: string
+        service_amount:
+          type: number
+          format: decimal
+
+    BookingRequestActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        booking_request_id:
+          type: integer
+          format: int64
+        booking_id:
+          type: integer
+          format: int64
+        new_status:
+          type: string
+        message:
+          type: string
+
+    BookingListResponse:
+      type: object
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    BookingDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        contractor_id:
+          type: integer
+          format: int64
+        client_id:
+          type: string
+          format: uuid
+        client_name:
+          type: string
+        client_phone:
+          type: string
+        client_email:
+          type: string
+        service_id:
+          type: integer
+          format: int64
+        service_name:
+          type: string
+        service_amount:
+          type: number
+          format: decimal
+        scheduled_date:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        address:
+          type: string
+        address_details:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [confirmed, in_progress, completed_by_contractor, completed, cancelled]
+        special_requests:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tip_amount:
+          type: number
+          format: decimal
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    BookingCompletionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        booking_id:
+          type: integer
+          format: int64
+        new_status:
+          type: string
+        message:
+          type: string
+        log_id:
+          type: integer
+          format: int64
+          description: ID of the service action log entry
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

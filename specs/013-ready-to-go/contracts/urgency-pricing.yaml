@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: Ready to Go - Urgency Pricing API
+  version: 1.0.0
+  description: |
+    API pour calculer les tarifs d'urgence avec surcharges selon les 3 paliers
+
+servers:
+  - url: https://{project-ref}.supabase.co/functions/v1
+    description: Supabase Edge Functions
+    variables:
+      project-ref:
+        default: your-project-ref
+
+paths:
+  /urgency/calculate-pricing:
+    post:
+      summary: Calculer la tarification pour une réservation urgente
+      description: |
+        Calcule le prix total avec surcharge d'urgence, le bonus prestataire et
+        le revenu plateforme selon le palier sélectionné
+      operationId: calculateUrgencyPricing
+      tags:
+        - Pricing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - basePrice
+                - urgencyLevel
+                - serviceId
+              properties:
+                basePrice:
+                  type: number
+                  format: decimal
+                  description: Prix de base du service (en euros)
+                  example: 80.00
+                urgencyLevel:
+                  type: string
+                  enum: [express, fast, today]
+                  example: "fast"
+                serviceId:
+                  type: integer
+                  format: int64
+                  description: ID du service (pour vérifier les overrides)
+                  example: 42
+      responses:
+        '200':
+          description: Tarification calculée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UrgencyPricingBreakdown'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Configuration de tarification non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /urgency/pricing-tiers:
+    get:
+      summary: Obtenir les configurations de tous les paliers tarifaires
+      description: |
+        Retourne la configuration des 3 paliers (Express, Rapide, Aujourd'hui)
+        avec les surcharges et répartitions actives
+      operationId: getPricingTiers
+      tags:
+        - Pricing
+      parameters:
+        - name: serviceId
+          in: query
+          description: ID du service pour récupérer les overrides spécifiques
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      responses:
+        '200':
+          description: Configurations des paliers tarifaires
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      express:
+                        $ref: '#/components/schemas/PricingTierConfig'
+                      fast:
+                        $ref: '#/components/schemas/PricingTierConfig'
+                      today:
+                        $ref: '#/components/schemas/PricingTierConfig'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /urgency/simulate-pricing:
+    post:
+      summary: Simuler la tarification pour plusieurs paliers
+      description: |
+        Calcule la tarification pour les 3 paliers simultanément pour comparaison
+      operationId: simulateUrgencyPricing
+      tags:
+        - Pricing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - basePrice
+                - serviceId
+              properties:
+                basePrice:
+                  type: number
+                  format: decimal
+                  example: 80.00
+                serviceId:
+                  type: integer
+                  format: int64
+                  example: 42
+      responses:
+        '200':
+          description: Simulation des 3 paliers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      basePrice:
+                        type: number
+                        format: decimal
+                        example: 80.00
+                      tiers:
+                        type: object
+                        properties:
+                          express:
+                            $ref: '#/components/schemas/UrgencyPricingBreakdown'
+                          fast:
+                            $ref: '#/components/schemas/UrgencyPricingBreakdown'
+                          today:
+                            $ref: '#/components/schemas/UrgencyPricingBreakdown'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    UrgencyPricingBreakdown:
+      type: object
+      properties:
+        urgencyLevel:
+          type: string
+          enum: [express, fast, today]
+          example: "fast"
+        label:
+          type: string
+          example: "Rapide (1h-2h)"
+        basePrice:
+          type: number
+          format: decimal
+          description: Prix de base du service
+          example: 80.00
+        surchargePercent:
+          type: number
+          format: decimal
+          description: Pourcentage de surcharge appliqué
+          example: 30.00
+        surchargeAmount:
+          type: number
+          format: decimal
+          description: Montant de la surcharge (en euros)
+          example: 24.00
+        contractorBonus:
+          type: number
+          format: decimal
+          description: Bonus reçu par le prestataire (50% de la surcharge par défaut)
+          example: 12.00
+        platformRevenue:
+          type: number
+          format: decimal
+          description: Revenu additionnel pour la plateforme (50% de la surcharge)
+          example: 12.00
+        totalPrice:
+          type: number
+          format: decimal
+          description: Prix total payé par le client
+          example: 104.00
+        configId:
+          type: integer
+          format: int64
+          description: ID de la configuration de tarification utilisée
+          example: 5
+        isServiceOverride:
+          type: boolean
+          description: True si une surcharge spécifique au service a été appliquée
+          example: false
+
+    PricingTierConfig:
+      type: object
+      properties:
+        urgencyLevel:
+          type: string
+          enum: [express, fast, today]
+          example: "fast"
+        label:
+          type: string
+          example: "Rapide (1h-2h)"
+        minMinutes:
+          type: integer
+          description: Délai minimum en minutes
+          example: 60
+        maxMinutes:
+          type: integer
+          description: Délai maximum en minutes
+          example: 120
+        globalSurchargePercent:
+          type: number
+          format: decimal
+          description: Surcharge globale (%)
+          example: 30.00
+        contractorSharePercent:
+          type: number
+          format: decimal
+          description: Part prestataire (%)
+          example: 50.00
+        platformSharePercent:
+          type: number
+          format: decimal
+          description: Part plateforme (%)
+          example: 50.00
+        isActive:
+          type: boolean
+          example: true
+        serviceOverride:
+          type: object
+          nullable: true
+          description: Override spécifique au service (si applicable)
+          properties:
+            serviceId:
+              type: integer
+              format: int64
+              example: 42
+            serviceName:
+              type: string
+              example: "Coiffure complète"
+            serviceSurchargePercent:
+              type: number
+              format: decimal
+              example: 60.00
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "INVALID_URGENCY_LEVEL"
+            message:
+              type: string
+              example: "Palier d'urgence invalide"
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INVALID_REQUEST"
+              message: "basePrice et urgencyLevel sont requis"
+
+    InternalError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "Une erreur est survenue lors du calcul de la tarification"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

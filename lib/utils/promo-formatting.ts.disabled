@@ -1,0 +1,60 @@
+/**
+ * Promo code formatting utilities
+ * Task: T012
+ */
+
+import type { DiscountType, PromoCodeStatus } from '@/types/promo-code'
+
+/**
+ * Format promo discount for display
+ */
+export function formatPromoDiscount(
+  discountType: DiscountType,
+  discountValue: number
+): string {
+  if (discountType === 'percentage') {
+    return `${discountValue}%`
+  } else {
+    return `${discountValue.toFixed(2)}€`
+  }
+}
+
+/**
+ * Format promo status for display with color
+ */
+export function formatPromoStatus(status: PromoCodeStatus): {
+  label: string
+  color: string
+} {
+  switch (status) {
+    case 'active':
+      return { label: 'Actif', color: 'green' }
+    case 'expired':
+      return { label: 'Expiré', color: 'red' }
+    case 'exhausted':
+      return { label: 'Épuisé', color: 'orange' }
+    case 'scheduled':
+      return { label: 'Programmé', color: 'blue' }
+    case 'inactive':
+      return { label: 'Inactif', color: 'gray' }
+  }
+}
+
+/**
+ * Format currency amount
+ */
+export function formatCurrency(amount: number): string {
+  return `${amount.toFixed(2)}€`
+}
+
+/**
+ * Format date for display
+ */
+export function formatDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}

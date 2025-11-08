@@ -1,0 +1,299 @@
+openapi: 3.1.0
+info:
+  title: Gift Cards API
+  description: API for validating and applying gift card balances
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /validate-gift-card:
+    post:
+      summary: Validate gift card
+      description: |
+        Validates a gift card and returns available balance.
+        - Checks code existence
+        - Verifies validity dates (not expired)
+        - Returns current balance
+        - Checks if assigned to user (if applicable)
+      operationId: validateGiftCard
+      tags:
+        - Gift Cards
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GiftCardValidationRequest'
+      responses:
+        '200':
+          description: Gift card validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCardValidationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /apply-gift-card:
+    post:
+      summary: Apply gift card to booking
+      description: |
+        Deducts amount from gift card balance for a booking.
+        - Creates transaction record
+        - Updates gift card balance
+        - Links to booking for audit trail
+        - Atomic operation (rollback on failure)
+      operationId: applyGiftCard
+      tags:
+        - Gift Cards
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - giftCardId
+                - bookingId
+                - amountUsed
+              properties:
+                giftCardId:
+                  type: integer
+                  format: int64
+                  example: 42
+                bookingId:
+                  type: integer
+                  format: int64
+                  example: 789
+                amountUsed:
+                  type: number
+                  format: float
+                  description: Amount to deduct from balance
+                  minimum: 0
+                  example: 30.00
+      responses:
+        '201':
+          description: Gift card applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - transactionId
+                  - newBalance
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  transactionId:
+                    type: integer
+                    format: int64
+                    example: 567
+                  newBalance:
+                    type: number
+                    format: float
+                    example: 20.00
+        '400':
+          description: Insufficient balance or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /gift-card-balance:
+    get:
+      summary: Get gift card balance
+      description: Get current balance and transaction history for a gift card
+      operationId: getGiftCardBalance
+      tags:
+        - Gift Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "GIFT-1234-5678-9ABC"
+      responses:
+        '200':
+          description: Gift card details and balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCardBalanceResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    GiftCardValidationRequest:
+      type: object
+      required:
+        - code
+        - userId
+      properties:
+        code:
+          type: string
+          description: Gift card code (case-insensitive)
+          example: "GIFT-1234-5678-9ABC"
+        userId:
+          type: string
+          format: uuid
+          description: User ID to check assignment
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    GiftCardValidationResponse:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+          example: true
+        giftCardId:
+          type: integer
+          format: int64
+          example: 42
+        currentBalance:
+          type: number
+          format: float
+          description: Available balance in euros
+          example: 50.00
+        currency:
+          type: string
+          example: "EUR"
+        message:
+          type: string
+          example: "Carte cadeau valide. Solde disponible: 50.00€"
+        cardDetails:
+          type: object
+          description: Additional card information (only if valid)
+          properties:
+            code:
+              type: string
+              example: "GIFT-1234-5678-9ABC"
+            initialBalance:
+              type: number
+              format: float
+              example: 100.00
+            validUntil:
+              type: string
+              format: date-time
+              example: "2025-12-31T23:59:59Z"
+            cardType:
+              type: string
+              enum: [standard, corporate]
+              example: "standard"
+            corporateLogoUrl:
+              type: string
+              format: uri
+              description: Only for corporate cards
+              example: "https://example.com/logos/company.png"
+        errorCode:
+          type: string
+          description: Error code if invalid
+          enum:
+            - CARD_NOT_FOUND
+            - CARD_EXPIRED
+            - CARD_EXHAUSTED
+            - CARD_NOT_ASSIGNED
+          example: "CARD_EXPIRED"
+
+    GiftCardBalanceResponse:
+      type: object
+      required:
+        - code
+        - currentBalance
+        - initialBalance
+        - currency
+        - validUntil
+      properties:
+        code:
+          type: string
+          example: "GIFT-1234-5678-9ABC"
+        currentBalance:
+          type: number
+          format: float
+          example: 50.00
+        initialBalance:
+          type: number
+          format: float
+          example: 100.00
+        currency:
+          type: string
+          example: "EUR"
+        validUntil:
+          type: string
+          format: date-time
+          example: "2025-12-31T23:59:59Z"
+        cardType:
+          type: string
+          enum: [standard, corporate]
+          example: "standard"
+        transactions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 123
+              bookingId:
+                type: integer
+                format: int64
+                example: 789
+              amountUsed:
+                type: number
+                format: float
+                example: 30.00
+              balanceAfter:
+                type: number
+                format: float
+                example: 70.00
+              transactionDate:
+                type: string
+                format: date-time
+                example: "2024-11-01T14:30:00Z"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "INSUFFICIENT_BALANCE"
+        message:
+          type: string
+          example: "Solde insuffisant. Disponible: 20.00€, Requis: 30.00€"
+        details:
+          type: object
+          properties:
+            availableBalance:
+              type: number
+              format: float
+              example: 20.00
+            requestedAmount:
+              type: number
+              format: float
+              example: 30.00

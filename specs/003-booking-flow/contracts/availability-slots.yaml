@@ -1,0 +1,250 @@
+openapi: 3.1.0
+info:
+  title: Availability Slots API
+  description: API for fetching available booking slots based on service, location, and date range
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /get-available-slots:
+    post:
+      summary: Get available time slots
+      description: |
+        Fetches available booking slots for a service at a given address within a date range.
+        - Integrates with spec 002 availability algorithm
+        - Filters by contractor if booking via slug
+        - Returns sorted slots with contractor assignments
+        - Caching recommended (1 minute client-side)
+      operationId: getAvailableSlots
+      tags:
+        - Booking
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '200':
+          description: Available slots retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /verify-slot-availability:
+    post:
+      summary: Verify slot is still available
+      description: |
+        Race condition check before payment to ensure slot hasn't been booked.
+        - Must be called immediately before payment authorization
+        - Returns conflict if slot taken
+        - Critical for preventing double bookings
+      operationId: verifySlotAvailability
+      tags:
+        - Booking
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contractorId
+                - scheduledStart
+                - scheduledEnd
+              properties:
+                contractorId:
+                  type: integer
+                  format: int64
+                  example: 123
+                scheduledStart:
+                  type: string
+                  format: date-time
+                  example: "2024-11-07T14:00:00Z"
+                scheduledEnd:
+                  type: string
+                  format: date-time
+                  example: "2024-11-07T15:00:00Z"
+      responses:
+        '200':
+          description: Slot availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - available
+                properties:
+                  available:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Slot is available"
+        '409':
+          description: Slot no longer available (conflict)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - available
+                  - message
+                properties:
+                  available:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Ce créneau vient d'être réservé par un autre client"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AvailabilityRequest:
+      type: object
+      required:
+        - serviceId
+        - addressLat
+        - addressLng
+        - startDate
+        - endDate
+      properties:
+        serviceId:
+          type: integer
+          format: int64
+          description: ID of the service to book
+          example: 1
+        addressLat:
+          type: number
+          format: float
+          description: Latitude of service address
+          example: 48.8566
+        addressLng:
+          type: number
+          format: float
+          description: Longitude of service address
+          example: 2.3522
+        startDate:
+          type: string
+          format: date
+          description: Start date for availability search (YYYY-MM-DD)
+          example: "2024-11-07"
+        endDate:
+          type: string
+          format: date
+          description: End date for availability search (YYYY-MM-DD)
+          example: "2024-11-14"
+        contractorId:
+          type: integer
+          format: int64
+          description: Optional - Filter by specific contractor (for slug bookings)
+          example: 123
+
+    AvailabilityResponse:
+      type: object
+      required:
+        - slots
+        - totalCount
+      properties:
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlot'
+        totalCount:
+          type: integer
+          example: 42
+        cacheExpiry:
+          type: string
+          format: date-time
+          description: Client should refetch after this time
+          example: "2024-11-07T14:05:00Z"
+
+    TimeSlot:
+      type: object
+      required:
+        - id
+        - start
+        - end
+        - contractorId
+        - contractorName
+        - travelTimeMinutes
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this slot
+          example: "slot_20241107_1400_contractor_123"
+        start:
+          type: string
+          format: date-time
+          example: "2024-11-07T14:00:00Z"
+        end:
+          type: string
+          format: date-time
+          example: "2024-11-07T15:00:00Z"
+        contractorId:
+          type: integer
+          format: int64
+          example: 123
+        contractorName:
+          type: string
+          example: "Marie Dupont"
+        contractorRating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          example: 4.8
+        contractorPhotoUrl:
+          type: string
+          format: uri
+          example: "https://example.com/photos/marie.jpg"
+        travelTimeMinutes:
+          type: integer
+          description: Travel time from contractor location to service address
+          example: 15
+        isPreferred:
+          type: boolean
+          description: True if this is the recommended contractor for this slot
+          example: true
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "INVALID_PARAMETERS"
+        message:
+          type: string
+          example: "Service ID is required"
+        details:
+          type: object
+          additionalProperties: true

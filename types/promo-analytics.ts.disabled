@@ -1,0 +1,76 @@
+/**
+ * Analytics types for Promo Code system
+ * Task: T005
+ */
+
+import type { DiscountType } from './promo-code'
+
+/**
+ * KPIs for analytics dashboard
+ */
+export interface PromoAnalyticsKPIs {
+  active_codes_count: number
+  total_uses: number
+  total_platform_cost: number
+  total_revenue_generated: number
+  roi_percentage: number
+  average_discount_per_use: number
+}
+
+/**
+ * Top performing promo code
+ */
+export interface TopPromoCode {
+  code: string
+  promo_id: number
+  uses_count: number
+  total_discount: number
+  average_discount: number
+  total_revenue: number
+  conversion_rate: number  // % of validations that resulted in bookings
+}
+
+/**
+ * Usage chart data point (aggregated by day)
+ */
+export interface PromoUsageChartData {
+  date: string  // YYYY-MM-DD
+  uses_count: number
+  total_discount: number
+  total_revenue: number
+}
+
+/**
+ * Detailed code performance
+ */
+export interface PromoCodePerformance {
+  promo_id: number
+  code: string
+  description: string | null
+  discount_type: DiscountType
+  discount_value: number
+  uses_count: number
+  unique_users: number
+  total_platform_cost: number
+  total_revenue_generated: number
+  roi_percentage: number
+  average_order_value: number
+  conversion_rate: number
+  created_at: string
+  chart_data: PromoUsageChartData[]
+  recent_uses: PromoCodeUsageDetail[]
+}
+
+/**
+ * Usage detail for code performance view
+ */
+export interface PromoCodeUsageDetail {
+  booking_id: number
+  user_email: string
+  user_name: string
+  service_name: string
+  original_amount: number
+  discount_amount: number
+  final_amount: number
+  used_at: string
+}

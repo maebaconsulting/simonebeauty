@@ -1,0 +1,477 @@
+openapi: 3.1.0
+info:
+  title: Contractor Schedule API
+  description: API for managing contractor work schedules and unavailabilities
+  version: 1.0.0
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1
+    description: Supabase Edge Functions
+
+paths:
+  /contractor-schedule:
+    get:
+      summary: Get contractor schedule
+      description: Retrieve the weekly work schedule for the authenticated contractor
+      operationId: getContractorSchedule
+      tags:
+        - Schedule
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create schedule entry
+      description: Add a new work schedule entry
+      operationId: createScheduleEntry
+      tags:
+        - Schedule
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleEntryRequest'
+      responses:
+        '201':
+          description: Schedule entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleEntry'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-schedule/{id}:
+    put:
+      summary: Update schedule entry
+      description: Update an existing schedule entry
+      operationId: updateScheduleEntry
+      tags:
+        - Schedule
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleEntryRequest'
+      responses:
+        '200':
+          description: Schedule entry updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleEntry'
+        '404':
+          description: Schedule entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete schedule entry
+      description: Remove a schedule entry
+      operationId: deleteScheduleEntry
+      tags:
+        - Schedule
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Schedule entry deleted
+        '404':
+          description: Schedule entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-unavailabilities:
+    get:
+      summary: Get unavailabilities
+      description: Retrieve all unavailability blocks for the contractor
+      operationId: getUnavailabilities
+      tags:
+        - Unavailabilities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Unavailabilities retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnavailabilityListResponse'
+
+    post:
+      summary: Create unavailability
+      description: Block a specific time slot
+      operationId: createUnavailability
+      tags:
+        - Unavailabilities
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnavailabilityRequest'
+      responses:
+        '201':
+          description: Unavailability created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unavailability'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-unavailabilities/{id}:
+    delete:
+      summary: Delete unavailability
+      description: Remove an unavailability block
+      operationId: deleteUnavailability
+      tags:
+        - Unavailabilities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Unavailability deleted
+        '404':
+          description: Unavailability not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /contractor-planning:
+    get:
+      summary: Get weekly planning
+      description: Get complete planning for a week with bookings and travel times
+      operationId: getWeeklyPlanning
+      tags:
+        - Planning
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: week_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Monday of the week to display
+      responses:
+        '200':
+          description: Planning retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyPlanningResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ScheduleResponse:
+      type: object
+      properties:
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleEntry'
+
+    ScheduleEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        contractor_id:
+          type: integer
+          format: int64
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        is_recurring:
+          type: boolean
+        effective_from:
+          type: string
+          format: date
+          nullable: true
+        effective_until:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ScheduleEntryRequest:
+      type: object
+      required:
+        - day_of_week
+        - start_time
+        - end_time
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        is_recurring:
+          type: boolean
+          default: true
+        effective_from:
+          type: string
+          format: date
+        effective_until:
+          type: string
+          format: date
+
+    UnavailabilityListResponse:
+      type: object
+      properties:
+        unavailabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unavailability'
+
+    Unavailability:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        contractor_id:
+          type: integer
+          format: int64
+        start_datetime:
+          type: string
+          format: date-time
+        end_datetime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          nullable: true
+        reason_type:
+          type: string
+          enum: [vacation, personal, lunch_break, sick, other]
+          nullable: true
+        is_recurring:
+          type: boolean
+        recurrence_pattern:
+          type: string
+          enum: [daily, weekly, monthly]
+          nullable: true
+        recurrence_end_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UnavailabilityRequest:
+      type: object
+      required:
+        - start_datetime
+        - end_datetime
+      properties:
+        start_datetime:
+          type: string
+          format: date-time
+        end_datetime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        reason_type:
+          type: string
+          enum: [vacation, personal, lunch_break, sick, other]
+        is_recurring:
+          type: boolean
+          default: false
+        recurrence_pattern:
+          type: string
+          enum: [daily, weekly, monthly]
+        recurrence_end_date:
+          type: string
+          format: date
+
+    WeeklyPlanningResponse:
+      type: object
+      properties:
+        week_start:
+          type: string
+          format: date
+        week_end:
+          type: string
+          format: date
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayPlanning'
+
+    DayPlanning:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        day_of_week:
+          type: integer
+        work_hours:
+          type: object
+          properties:
+            start_time:
+              type: string
+              format: time
+            end_time:
+              type: string
+              format: time
+          nullable: true
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanningBooking'
+        unavailabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanningUnavailability'
+
+    PlanningBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        client_name:
+          type: string
+        service_name:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+        travel_time_after:
+          type: integer
+          description: Estimated travel time to next booking in minutes
+          nullable: true
+
+    PlanningUnavailability:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        reason_type:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
