@@ -24,26 +24,26 @@ export default function RejoindreSimonePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-button-primary to-purple-600 text-white py-16">
+      <div className="bg-gradient-to-b from-gray-50 to-white py-16 border-b border-gray-100">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h1 className="font-playfair text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="font-playfair text-4xl md:text-5xl font-bold mb-4 text-gray-900">
             Rejoignez Simone Paris
           </h1>
-          <p className="text-lg md:text-xl text-white/90 mb-6">
+          <p className="text-lg md:text-xl text-gray-600 mb-6">
             Développez votre activité en rejoignant notre réseau de prestataires qualifiés
           </p>
           <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-3xl font-bold mb-2">+500</div>
-              <div className="text-sm text-white/80">Clients actifs</div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="text-3xl font-bold mb-2 text-button-primary">+500</div>
+              <div className="text-sm text-gray-600">Clients actifs</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-3xl font-bold mb-2">4.8/5</div>
-              <div className="text-sm text-white/80">Satisfaction moyenne</div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="text-3xl font-bold mb-2 text-button-primary">4.8/5</div>
+              <div className="text-sm text-gray-600">Satisfaction moyenne</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-3xl font-bold mb-2">85%</div>
-              <div className="text-sm text-white/80">Taux de commission</div>
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="text-3xl font-bold mb-2 text-button-primary">85%</div>
+              <div className="text-sm text-gray-600">Taux de commission</div>
             </div>
           </div>
         </div>
