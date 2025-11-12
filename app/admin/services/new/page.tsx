@@ -23,6 +23,7 @@ import {
   SupplementsTabPlaceholder,
   ContractorsTabPlaceholder,
 } from '@/components/admin/services/ServiceForm/PlaceholderTabs'
+import { MarketsTab } from '@/components/admin/services/ServiceForm/MarketsTab'
 import { toast } from 'sonner'
 
 // ============================================================================
@@ -124,6 +125,7 @@ export default function CreateServicePage() {
         categories: <CategoriesTab form={form} />,
         supplements: <SupplementsTabPlaceholder />,
         contractors: <ContractorsTabPlaceholder />,
+        markets: <MarketsTab serviceId={null} basePrice={form.watch('base_price') || 0} />,
         configuration: <ConfigurationTab form={form} />,
         protocol: <ProtocolTab form={form} />,
       }}

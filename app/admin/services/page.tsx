@@ -12,11 +12,13 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { useServices, useDuplicateService, useBulkUpdateServices } from '@/hooks/useServiceCRUD'
+import { useMarkets } from '@/hooks/useMarkets'
 import { Briefcase, Plus, Loader2, Search, Filter, Copy, CheckSquare, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { MarketBadges } from '@/components/admin/services/MarketBadges'
 import Link from 'next/link'
 
 export default function ServicesListPage() {
@@ -25,10 +27,18 @@ export default function ServicesListPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [marketFilter, setMarketFilter] = useState<number | null>(null)
   const [selectedServices, setSelectedServices] = useState<Set<number>>(new Set())
 
   const duplicateService = useDuplicateService()
   const bulkUpdateServices = useBulkUpdateServices()
+
+  // Fetch markets for filter
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
 
   // Check authentication and role
   const { data: session } = useQuery({
@@ -57,6 +67,7 @@ export default function ServicesListPage() {
   const { data: servicesResult, isLoading } = useServices({
     search: search || undefined,
     is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    market_id: marketFilter || undefined,
     limit: 100,
   })
 
@@ -249,7 +260,7 @@ export default function ServicesListPage() {
           )}
 
           {/* Filters */}
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 flex gap-4 flex-wrap">
             <div className="flex-1 max-w-md">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -285,6 +296,20 @@ export default function ServicesListPage() {
                 Inactifs
               </Button>
             </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={marketFilter || ''}
+                onChange={(e) => setMarketFilter(e.target.value ? Number(e.target.value) : null)}
+                className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="">Tous les marchés</option>
+                {markets.map((market) => (
+                  <option key={market.id} value={market.id}>
+                    {market.code} - {market.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -297,11 +322,11 @@ export default function ServicesListPage() {
               Aucun service trouvé
             </h3>
             <p className="text-gray-600 mb-6">
-              {search || statusFilter !== 'all'
+              {search || statusFilter !== 'all' || marketFilter
                 ? 'Essayez de modifier vos filtres de recherche.'
                 : 'Commencez par créer votre premier service.'}
             </p>
-            {!search && statusFilter === 'all' && (
+            {!search && statusFilter === 'all' && !marketFilter && (
               <Link href="/admin/services/new">
                 <Button className="bg-[#FF9B8A] hover:bg-[#FF8A76] text-white">
                   <Plus className="h-4 w-4 mr-2" />
@@ -329,6 +354,9 @@ export default function ServicesListPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Durée
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Marchés
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
@@ -367,6 +395,9 @@ export default function ServicesListPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {service.base_duration_minutes} min
+                      </td>
+                      <td className="px-6 py-4">
+                        <MarketBadges markets={(service as any).markets || []} maxVisible={3} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>

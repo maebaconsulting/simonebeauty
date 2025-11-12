@@ -24,6 +24,7 @@ import {
 } from '@/components/admin/services/ServiceForm/PlaceholderTabs'
 import { ServiceSupplementsManager } from '@/components/admin/services/ServiceSupplementsManager'
 import { ServiceContractorsManager } from '@/components/admin/services/ServiceContractorsManager'
+import { MarketsTab } from '@/components/admin/services/ServiceForm/MarketsTab'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -205,6 +206,7 @@ export default function EditServicePage({ params }: EditServicePageProps) {
         categories: <CategoriesTab form={form} />,
         supplements: <ServiceSupplementsManager serviceId={serviceId} serviceName={service.name} />,
         contractors: <ServiceContractorsManager serviceId={serviceId} serviceName={service.name} />,
+        markets: <MarketsTab serviceId={serviceId} basePrice={form.watch('base_price') || service.base_price} />,
         configuration: <ConfigurationTab form={form} />,
         protocol: <ProtocolTab form={form} />,
       }}

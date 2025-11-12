@@ -63,6 +63,7 @@ interface UseServicesOptions {
   is_active?: boolean
   is_featured?: boolean
   search?: string
+  market_id?: number
   limit?: number
   offset?: number
 }
@@ -113,9 +114,33 @@ export function useServices(options: UseServicesOptions = {}) {
         throw error
       }
 
+      // Fetch markets for each service
+      const servicesWithMarkets = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: marketAvailability } = await supabase
+            .from('service_market_availability')
+            .select('market_id, markets(id, name, code, currency_code)')
+            .eq('service_id', service.id)
+            .eq('is_available', true)
+
+          return {
+            ...service,
+            markets: marketAvailability?.map(ma => (ma as any).markets).filter(Boolean) || []
+          }
+        })
+      )
+
+      // Filter by market if specified
+      let filteredServices = servicesWithMarkets
+      if (options.market_id) {
+        filteredServices = servicesWithMarkets.filter(service =>
+          (service as any).markets.some((m: any) => m.id === options.market_id)
+        )
+      }
+
       return {
-        services: data || [],
-        total: count || 0,
+        services: filteredServices,
+        total: filteredServices.length, // Update count to reflect filtered results
       }
     },
   })

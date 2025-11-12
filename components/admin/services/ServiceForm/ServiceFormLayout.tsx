@@ -26,6 +26,7 @@ import {
   X,
   Loader2,
   Trash2,
+  Globe,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -50,6 +51,7 @@ export interface ServiceFormLayoutProps {
     contractors: ReactNode
     configuration: ReactNode
     protocol: ReactNode
+    markets: ReactNode
   }
 }
 
@@ -94,6 +96,11 @@ const tabs: TabConfig[] = [
     id: 'contractors',
     label: 'Prestataires',
     icon: Users,
+  },
+  {
+    id: 'markets',
+    label: 'Marchés',
+    icon: Globe,
   },
   {
     id: 'configuration',
@@ -276,6 +283,10 @@ export default function ServiceFormLayout({
 
               <TabsContent value="contractors" className="mt-0">
                 {children.contractors}
+              </TabsContent>
+
+              <TabsContent value="markets" className="mt-0">
+                {children.markets}
               </TabsContent>
 
               <TabsContent value="configuration" className="mt-0">

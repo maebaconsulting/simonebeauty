@@ -9,10 +9,12 @@
  * Main admin dashboard with statistics and navigation
  */
 
+import { useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { useBookingStats } from '@/hooks/useAdminBookings'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { MarketSelector } from '@/components/admin/MarketSelector'
 import {
   Users,
   FileText,
@@ -29,7 +31,10 @@ import Link from 'next/link'
 
 export default function AdminDashboardPage() {
   const { user, profile, isLoading } = useUser()
+  const [selectedMarket, setSelectedMarket] = useState<number | null>(null)
   const { data: bookingStats } = useBookingStats()
+
+  // TODO: Filter stats by selected market when backend supports it
 
   if (isLoading) {
     return (
@@ -68,12 +73,20 @@ export default function AdminDashboardPage() {
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-playfair text-4xl font-bold text-gray-900 mb-2">
-            Tableau de Bord Admin
-          </h1>
-          <p className="text-gray-600">
-            Bienvenue, {profile.first_name} {profile.last_name}
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="font-playfair text-4xl font-bold text-gray-900 mb-2">
+                Tableau de Bord Admin
+              </h1>
+              <p className="text-gray-600">
+                Bienvenue, {profile.first_name} {profile.last_name}
+              </p>
+            </div>
+            <MarketSelector
+              value={selectedMarket}
+              onChange={setSelectedMarket}
+            />
+          </div>
         </div>
 
         {/* Quick Stats */}
