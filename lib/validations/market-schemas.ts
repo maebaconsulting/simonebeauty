@@ -101,7 +101,7 @@ export const listMarketsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   is_active: z.coerce.boolean().optional(),
-  search: z.string().optional(),
+  search: z.string().nullable().optional(),
   sort: z.enum(['id', 'name', 'code', 'created_at']).default('id'),
   order: z.enum(['asc', 'desc']).default('asc'),
 });

@@ -28,7 +28,8 @@ import {
   Folder,
   Tag,
   UserCircle,
-  Building2
+  Building2,
+  Globe
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -114,6 +115,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/promo-codes',
       icon: Tag,
       current: pathname?.startsWith('/admin/promo-codes')
+    },
+    {
+      name: 'Marchés',
+      href: '/admin/markets',
+      icon: Globe,
+      current: pathname?.startsWith('/admin/markets')
     },
     {
       name: 'Traductions',

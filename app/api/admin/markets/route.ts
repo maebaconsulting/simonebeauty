@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     const queryParams = {
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20',
-      is_active: searchParams.get('is_active'),
-      search: searchParams.get('search'),
+      is_active: searchParams.get('is_active') || undefined,
+      search: searchParams.get('search') || undefined,
       sort: searchParams.get('sort') || 'id',
       order: searchParams.get('order') || 'asc',
     };
