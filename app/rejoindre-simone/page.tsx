@@ -2,12 +2,13 @@
  * Public Job Application Page
  * Feature: 007-contractor-interface
  * Route: /rejoindre-simone
- * 
+ *
  * Multi-step form for contractor applications
  */
 
 import { Metadata } from 'next'
 import { ApplicationForm } from '@/components/contractor/ApplicationForm/ApplicationForm'
+import { DollarSign, Calendar, Target, Shield } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Devenir Prestataire | Simone Paris',
@@ -54,23 +55,31 @@ export default function RejoindreSimonePage() {
           Pourquoi rejoindre Simone ?
         </h2>
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="text-button-primary text-2xl mb-3">💰</div>
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:border-button-primary/20 transition-colors">
+            <div className="w-12 h-12 bg-button-primary/10 rounded-lg flex items-center justify-center mb-4">
+              <DollarSign className="w-6 h-6 text-button-primary" strokeWidth={2} />
+            </div>
             <h3 className="font-semibold text-lg mb-2">Revenus attractifs</h3>
             <p className="text-gray-600">Commission de seulement 15% sur vos prestations</p>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="text-button-primary text-2xl mb-3">📅</div>
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:border-button-primary/20 transition-colors">
+            <div className="w-12 h-12 bg-button-primary/10 rounded-lg flex items-center justify-center mb-4">
+              <Calendar className="w-6 h-6 text-button-primary" strokeWidth={2} />
+            </div>
             <h3 className="font-semibold text-lg mb-2">Flexibilité totale</h3>
             <p className="text-gray-600">Gérez votre planning selon vos disponibilités</p>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="text-button-primary text-2xl mb-3">🎯</div>
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:border-button-primary/20 transition-colors">
+            <div className="w-12 h-12 bg-button-primary/10 rounded-lg flex items-center justify-center mb-4">
+              <Target className="w-6 h-6 text-button-primary" strokeWidth={2} />
+            </div>
             <h3 className="font-semibold text-lg mb-2">Clients qualifiés</h3>
             <p className="text-gray-600">Accédez à une clientèle premium pré-qualifiée</p>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="text-button-primary text-2xl mb-3">🛡️</div>
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:border-button-primary/20 transition-colors">
+            <div className="w-12 h-12 bg-button-primary/10 rounded-lg flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-button-primary" strokeWidth={2} />
+            </div>
             <h3 className="font-semibold text-lg mb-2">Paiements sécurisés</h3>
             <p className="text-gray-600">Recevez vos paiements rapidement via Stripe</p>
           </div>
