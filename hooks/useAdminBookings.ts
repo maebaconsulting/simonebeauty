@@ -44,6 +44,9 @@ export function useAdminBookings(filters?: AdminBookingFilters) {
       if (filters?.contractor_id) {
         params.append('contractor_id', filters.contractor_id);
       }
+      if (filters?.market_id) {
+        params.append('market_id', filters.market_id.toString());
+      }
       if (filters?.page) {
         params.append('page', filters.page.toString());
       }
