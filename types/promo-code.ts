@@ -43,6 +43,7 @@ export interface PromoCode {
   first_booking_only: boolean
   specific_services: number[] | null  // null = all services
   specific_categories: number[] | null  // null = all categories
+  specific_markets: number[] | null  // null = all markets (Feature 019)
 
   // Status
   is_active: boolean

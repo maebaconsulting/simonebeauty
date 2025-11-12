@@ -42,6 +42,7 @@ export const promoCodeFormSchema = z.object({
   first_booking_only: z.boolean().default(false),
   specific_services: z.array(z.number()).nullable().optional(),
   specific_categories: z.array(z.number()).nullable().optional(),
+  specific_markets: z.array(z.number()).nullable().optional(),
 
   // Status
   is_active: z.boolean().default(true),
@@ -83,5 +84,6 @@ export interface PromoCodeFormSubmit {
   first_booking_only: boolean
   specific_services?: number[] | null
   specific_categories?: number[] | null
+  specific_markets?: number[] | null
   is_active: boolean
 }

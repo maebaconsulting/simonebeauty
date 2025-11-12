@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import type { PromoCode } from '@/types/promo-code'
+import { useMarkets } from '@/hooks/useMarkets'
 
 interface PromoCodeFormProps {
   initialData?: PromoCode
@@ -63,6 +64,7 @@ export function PromoCodeForm({
           first_booking_only: initialData.first_booking_only,
           specific_services: initialData.specific_services || undefined,
           specific_categories: initialData.specific_categories || undefined,
+          specific_markets: initialData.specific_markets || undefined,
           is_active: initialData.is_active,
         }
       : {
@@ -78,6 +80,14 @@ export function PromoCodeForm({
   const discountType = watch('discount_type')
   const firstBookingOnly = watch('first_booking_only')
   const isActive = watch('is_active')
+  const specificMarkets = watch('specific_markets')
+
+  // Fetch all active markets
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
 
   const handleFormSubmit = async (data: PromoCodeFormData) => {
     await onSubmit(data)
@@ -318,6 +328,47 @@ export function PromoCodeForm({
             <Label htmlFor="first_booking_only" className="cursor-pointer">
               Réservé aux premières réservations uniquement
             </Label>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">
+              Marchés autorisés (optionnel)
+            </Label>
+            <p className="text-sm text-gray-500 mb-3">
+              Laissez tout décoché pour appliquer à tous les marchés
+            </p>
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+              {markets.map((market) => {
+                const isChecked = specificMarkets?.includes(market.id) || false
+                return (
+                  <div key={market.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`market-${market.id}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        const currentMarkets = specificMarkets || []
+                        if (checked) {
+                          setValue('specific_markets', [...currentMarkets, market.id])
+                        } else {
+                          setValue(
+                            'specific_markets',
+                            currentMarkets.filter((id) => id !== market.id)
+                          )
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor={`market-${market.id}`}
+                      className="cursor-pointer flex items-center gap-2"
+                    >
+                      <span className="font-medium">{market.name}</span>
+                      <span className="text-xs text-gray-500">({market.code})</span>
+                      <span className="text-xs text-gray-400">{market.currency_code}</span>
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           <div>
