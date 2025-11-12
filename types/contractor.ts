@@ -68,6 +68,15 @@ export interface ContractorApplicationWithSpecialties extends ContractorApplicat
   specialty_names?: string[]
 }
 
+export interface ContractorApplicationWithMarket extends ContractorApplication {
+  market?: {
+    id: number
+    code: string
+    name: string
+    currency_code: string
+  }
+}
+
 export interface ContractorApplicationFilters {
   status?: ApplicationStatus
   search?: string

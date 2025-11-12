@@ -14,7 +14,7 @@ import { ScheduleInterviewModal } from '@/components/admin/ScheduleInterviewModa
 import { ApproveApplicationModal } from '@/components/admin/ApproveApplicationModal'
 import { RejectApplicationModal } from '@/components/admin/RejectApplicationModal'
 import { DeleteApplicationModal } from '@/components/admin/DeleteApplicationModal'
-import { ApplicationStatus, ContractorApplication } from '@/types/contractor'
+import { ApplicationStatus, ContractorApplicationWithMarket } from '@/types/contractor'
 import { Button } from '@/components/ui/button'
 import { Search, Filter, FileText } from 'lucide-react'
 import {
@@ -37,7 +37,7 @@ export default function AdminApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Modal state
-  const [selectedApplication, setSelectedApplication] = useState<ContractorApplication | null>(null)
+  const [selectedApplication, setSelectedApplication] = useState<ContractorApplicationWithMarket | null>(null)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false)
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
@@ -57,8 +57,11 @@ export default function AdminApplicationsPage() {
 
       let query = supabase
         .from('contractor_applications')
-        .select('*')
-        .order('submitted_at', { ascending: false })
+        .select(`
+          *,
+          market:markets(id, code, name, currency_code)
+        `)
+        .order('submitted_at', { ascending: false})
 
       // Apply status filter
       if (statusFilter !== 'all') {
@@ -72,7 +75,7 @@ export default function AdminApplicationsPage() {
         throw error
       }
 
-      return data as ContractorApplication[]
+      return data as ContractorApplicationWithMarket[]
     },
   })
 

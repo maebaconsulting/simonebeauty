@@ -6,13 +6,13 @@
  * Feature: 007-contractor-interface
  */
 
-import { ContractorApplication } from '@/types/contractor'
+import { ContractorApplicationWithMarket } from '@/types/contractor'
 import { Button } from '@/components/ui/button'
-import { Calendar, FileText, Mail, MapPin, Phone, User, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { Calendar, FileText, Mail, MapPin, Phone, User, Clock, CheckCircle, XCircle, Trash2, Globe } from 'lucide-react'
 import Link from 'next/link'
 
 interface ApplicationCardProps {
-  application: ContractorApplication
+  application: ContractorApplicationWithMarket
   onScheduleInterview?: (applicationId: number) => void
   onApprove?: (applicationId: number) => void
   onReject?: (applicationId: number) => void
@@ -53,6 +53,18 @@ export function ApplicationCard({
     return labels[frequency as keyof typeof labels] || frequency
   }
 
+  const getMarketBadge = (market: { code: string; name: string; currency_code: string } | null | undefined) => {
+    if (!market) return null
+
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-teal-100 text-teal-800">
+        <Globe className="w-3.5 h-3.5" />
+        <span>{market.name}</span>
+        <span className="text-xs opacity-75">({market.code})</span>
+      </span>
+    )
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -72,11 +84,12 @@ export function ApplicationCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h3 className="text-xl font-semibold text-gray-900">
               {application.first_name} {application.last_name}
             </h3>
             {getStatusBadge(application.status)}
+            {application.market && getMarketBadge(application.market)}
           </div>
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
