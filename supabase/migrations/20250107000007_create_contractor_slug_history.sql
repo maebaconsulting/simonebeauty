@@ -1,11 +1,10 @@
--- Migration: 20250107000007_create_contractor_slug_history.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor slug history table with indexes, RLS, and unique constraint
--- Date: 2025-11-07
+-- Migration: Create contractor_slug_history table
+-- Feature: 007-contractor-interface
+-- Description: Historique des changements de slug pour maintenir des redirections temporaires (30 jours)
 
 CREATE TABLE contractor_slug_history (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Slugs
   old_slug VARCHAR(50) NOT NULL,
@@ -39,7 +38,9 @@ CREATE POLICY "Contractors can view own slug history"
 ON contractor_slug_history FOR SELECT
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all slug history"
@@ -52,6 +53,3 @@ USING (
     AND profiles.role = 'admin'
   )
 );
-
--- Cleanup job (run daily via cron)
--- DELETE FROM contractor_slug_history WHERE expires_at < NOW();

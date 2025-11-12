@@ -55,6 +55,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Re-confirm email if user was previously verified
+    // This fixes the bug where password reset causes verified users to be asked to verify email again
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('email_verified')
+      .eq('id', userId)
+      .single()
+
+    if (profile?.email_verified) {
+      // User had verified their email before - re-confirm it in auth.users
+      await supabaseAdmin.auth.admin.updateUserById(
+        userId,
+        { email_confirm: true }
+      )
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Mot de passe réinitialisé avec succès',

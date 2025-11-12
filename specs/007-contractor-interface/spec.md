@@ -224,6 +224,7 @@ Un prestataire peut créer et modifier son slug unique qui permet aux clients de
 - **FR-018**: Le système DOIT générer des identifiants temporaires et les envoyer par email au prestataire approuvé
 - **FR-019**: Le système DOIT permettre aux admins de refuser une candidature avec motif obligatoire
 - **FR-020**: Le système DOIT archiver les candidatures refusées avec possibilité de recherche ultérieure
+- **FR-020a**: Le système DOIT permettre aux administrateurs de supprimer définitivement les candidatures refusées UNIQUEMENT (hard delete), avec confirmation obligatoire, suppression des fichiers associés du storage (CV, certifications, portfolio), et action irréversible clairement indiquée
 - **FR-021**: Le système DOIT forcer le prestataire à finaliser son onboarding (horaires + Stripe + profil) avant d'accepter des réservations
 
 **Planning et Disponibilités:**

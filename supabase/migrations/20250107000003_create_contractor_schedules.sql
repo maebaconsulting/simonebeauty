@@ -1,11 +1,10 @@
--- Migration: 20250107000003_create_contractor_schedules.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor schedules table with indexes, RLS, and unique constraint
--- Date: 2025-11-07
+-- Migration: Create contractor_schedules table
+-- Feature: 007-contractor-interface
+-- Description: Horaires de travail hebdomadaires configurés par les prestataires
 
 CREATE TABLE contractor_schedules (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Jour et horaires
   day_of_week INT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0 = dimanche, 6 = samedi
@@ -53,7 +52,9 @@ CREATE POLICY "Contractors can manage own schedules"
 ON contractor_schedules FOR ALL
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all schedules"

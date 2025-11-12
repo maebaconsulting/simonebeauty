@@ -1,11 +1,10 @@
--- Migration: 20250107000006_create_contractor_services.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor services table with indexes and RLS policies
--- Date: 2025-11-07
+-- Migration: Create contractor_services table
+-- Feature: 007-contractor-interface
+-- Description: Services proposés par chaque prestataire avec possibilité de personnalisation
 
 CREATE TABLE contractor_services (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
   service_id BIGINT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
 
   -- Activation
@@ -46,7 +45,9 @@ CREATE POLICY "Contractors can manage own services"
 ON contractor_services FOR ALL
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can manage all contractor services"

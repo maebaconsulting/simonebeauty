@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: Image Upload API
+  version: 1.0.0
+  description: API endpoints for uploading images to services, products, and conversations
+
+servers:
+  - url: https://api.simone.paris
+    description: Production
+  - url: http://localhost:3000
+    description: Development
+
+paths:
+  /api/images/upload:
+    post:
+      summary: Upload image
+      description: |
+        Upload an image for a service, product, product variant, or conversation.
+
+        **Permissions**:
+        - Admin/Manager: Can upload to services and products
+        - Client: Can upload to own conversations only
+
+        **Validation**:
+        - Max file size: 5MB (configurable via platform_config)
+        - Formats: JPEG, PNG, WebP only
+        - Max images per entity: 10 (configurable)
+
+      operationId: uploadImage
+
+      tags:
+        - Images
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - entityType
+                - entityId
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, or WebP)
+
+                entityType:
+                  type: string
+                  enum: [service, product, product_variant, conversation]
+                  description: Type of entity to attach the image to
+
+                entityId:
+                  type: integer
+                  format: int64
+                  description: ID of the entity (service_id, product_id, variant_id, or conversation_id)
+                  minimum: 1
+
+                altText:
+                  type: string
+                  maxLength: 125
+                  description: Optional alt-text (generated automatically if not provided)
+
+                isPrimary:
+                  type: boolean
+                  default: false
+                  description: Mark this image as primary (default image for the entity)
+
+      responses:
+        '201':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        format: int64
+                        description: Image ID
+                        example: 1234
+                      storagePath:
+                        type: string
+                        description: Storage path in Supabase bucket
+                        example: "products/123/product_1234_image_1705161600000.jpg"
+                      publicUrl:
+                        type: string
+                        format: uri
+                        description: Public URL to access the image
+                        example: "https://services.simone.paris/storage/v1/object/public/product-images/products/123/product_1234_image_1705161600000.jpg"
+                      altText:
+                        type: string
+                        description: Alt-text (generated or provided)
+                        example: "Vernis à ongles rouge brillant - Simone Paris"
+                      fileSizeBytes:
+                        type: integer
+                        description: File size in bytes
+                        example: 245632
+                      width:
+                        type: integer
+                        description: Image width in pixels
+                        example: 1200
+                      height:
+                        type: integer
+                        description: Image height in pixels
+                        example: 800
+                      displayOrder:
+                        type: integer
+                        description: Display order in gallery
+                        example: 0
+                      isPrimary:
+                        type: boolean
+                        description: Whether this is the primary image
+                        example: false
+
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                fileTooLarge:
+                  value:
+                    success: false
+                    error:
+                      code: "FILE_TOO_LARGE"
+                      message: "Fichier trop volumineux (max 5MB)"
+                invalidFormat:
+                  value:
+                    success: false
+                    error:
+                      code: "INVALID_FORMAT"
+                      message: "Format non supporté (JPEG, PNG, WebP uniquement)"
+                maxImagesReached:
+                  value:
+                    success: false
+                    error:
+                      code: "MAX_IMAGES_REACHED"
+                      message: "Limite de 10 images atteinte"
+                altTextTooLong:
+                  value:
+                    success: false
+                    error:
+                      code: "ALT_TEXT_TOO_LONG"
+                      message: "Alt-text trop long (max 125 caractères)"
+
+        '401':
+          description: Unauthorized - Missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "Authentication requise"
+
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error:
+                  code: "FORBIDDEN"
+                  message: "Permissions insuffisantes pour uploader sur cette entité"
+
+        '404':
+          description: Entity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error:
+                  code: "ENTITY_NOT_FOUND"
+                  message: "Produit avec ID 123 introuvable"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error:
+                  code: "INTERNAL_ERROR"
+                  message: "Erreur lors de l'upload de l'image"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Supabase Auth
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code for programmatic handling
+            message:
+              type: string
+              description: Human-readable error message (French)
+            details:
+              type: object
+              description: Additional error context
+              additionalProperties: true

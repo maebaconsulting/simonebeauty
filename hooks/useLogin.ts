@@ -113,12 +113,14 @@ async function processLogin(
   }
 
   // Determine redirect based on role
-  let redirectTo = '/dashboard'
+  let redirectTo = '/client' // Default route for clients
   if (profile.role === 'admin' || profile.role === 'manager') {
     redirectTo = '/admin'
   } else if (profile.role === 'contractor') {
     redirectTo = '/contractor/dashboard'
   }
+
+  console.log('[useLogin] Login successful for user:', userId, 'Role:', profile.role, 'RedirectTo:', redirectTo)
 
   return {
     success: true,

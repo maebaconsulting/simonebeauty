@@ -1,7 +1,6 @@
--- Migration: 20250107000014_create_financial_views.sql
--- Feature: 007 - Contractor Interface
--- Description: Create database views for contractor financial dashboard (monthly summary and transaction details)
--- Date: 2025-11-07
+-- Migration: Create financial views
+-- Feature: 007-contractor-interface
+-- Description: Vues SQL pour le dashboard financier des prestataires
 
 -- View: contractor_financial_summary
 -- Résumé financier mensuel pour chaque prestataire
@@ -107,8 +106,3 @@ ORDER BY b.completed_at DESC;
 COMMENT ON VIEW contractor_transaction_details IS 'Détail complet de chaque transaction pour historique financier et exports CSV';
 
 GRANT SELECT ON contractor_transaction_details TO authenticated;
-
--- Note: Views cannot have RLS policies. These views inherit RLS from their base tables:
--- - contractors table (with RLS for contractor access)
--- - appointment_bookings table (with RLS for contractor and client access)
--- The inherited RLS ensures contractors only see their own financial data.

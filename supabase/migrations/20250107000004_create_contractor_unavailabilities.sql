@@ -1,11 +1,10 @@
--- Migration: 20250107000004_create_contractor_unavailabilities.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor unavailabilities table with indexes and RLS policies
--- Date: 2025-11-07
+-- Migration: Create contractor_unavailabilities table
+-- Feature: 007-contractor-interface
+-- Description: Créneaux spécifiques bloqués par les prestataires (congés, pauses, rendez-vous personnels)
 
 CREATE TABLE contractor_unavailabilities (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Date et horaires
   start_datetime TIMESTAMP NOT NULL,
@@ -47,7 +46,9 @@ CREATE POLICY "Contractors can manage own unavailabilities"
 ON contractor_unavailabilities FOR ALL
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all unavailabilities"

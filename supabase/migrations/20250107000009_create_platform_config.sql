@@ -1,7 +1,6 @@
--- Migration: 20250107000009_create_platform_config.sql
--- Feature: 007 - Contractor Interface
--- Description: Create platform config table with RLS and seed data
--- Date: 2025-11-07
+-- Migration: Create platform_config table
+-- Feature: 007-contractor-interface
+-- Description: Configuration globale de la plateforme (paramètres système, listes de valeurs)
 
 CREATE TABLE platform_config (
   key VARCHAR(255) PRIMARY KEY,

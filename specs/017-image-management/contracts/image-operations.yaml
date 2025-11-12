@@ -1,0 +1,516 @@
+openapi: 3.0.3
+info:
+  title: Image Management Operations API
+  version: 1.0.0
+  description: API endpoints for managing, moderating, and generating alt-text for images
+
+servers:
+  - url: https://api.simone.paris
+    description: Production
+  - url: http://localhost:3000
+    description: Development
+
+paths:
+  /api/images/reorder:
+    post:
+      summary: Reorder images
+      description: |
+        Update the display order of images for an entity (service, product, or variant).
+
+        **Permissions**: Admin/Manager only
+        **Use Case**: After drag-and-drop reordering in admin UI
+
+      operationId: reorderImages
+      tags: [Images]
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entityType
+                - entityId
+                - imageOrder
+              properties:
+                entityType:
+                  type: string
+                  enum: [service, product, product_variant]
+                entityId:
+                  type: integer
+                  format: int64
+                imageOrder:
+                  type: array
+                  description: Array of image IDs in desired display order
+                  items:
+                    type: integer
+                    format: int64
+                  example: [45, 23, 67, 12]
+
+      responses:
+        '200':
+          description: Images reordered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+                        description: Number of images updated
+                        example: 4
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/images/delete:
+    delete:
+      summary: Delete image (soft delete)
+      description: |
+        Soft delete an image by setting deleted_at timestamp.
+
+        **Permissions**:
+        - Admin/Manager: Can delete service/product images
+        - Clients: Cannot delete (moderation handles inappropriate UGC)
+
+        **Recovery**: Soft-deleted images can be recovered within 30 days
+
+      operationId: deleteImage
+      tags: [Images]
+      security:
+        - BearerAuth: []
+
+      parameters:
+        - name: imageId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Image ID to delete
+        - name: entityType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [service, product, product_variant, conversation]
+          description: Type of entity the image belongs to
+
+      responses:
+        '200':
+          description: Image deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      imageId:
+                        type: integer
+                        example: 1234
+                      deletedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-11T15:30:00Z"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/images/generate-alt-text:
+    post:
+      summary: Generate AI alt-text
+      description: |
+        Generate alt-text for an image using OpenAI GPT-4 Vision API.
+
+        **Permissions**: Admin/Manager/Client (for own conversation images)
+        **Process**:
+        1. Fetch image from storage
+        2. Send to OpenAI Vision API with context (entity name, category)
+        3. Return generated French description (max 125 chars)
+        4. Optionally save to database
+
+      operationId: generateAltText
+      tags: [Images, AI]
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - imageId
+                - entityType
+              properties:
+                imageId:
+                  type: integer
+                  format: int64
+                  description: Image ID to generate alt-text for
+                entityType:
+                  type: string
+                  enum: [service, product, product_variant, conversation]
+                saveToDatabase:
+                  type: boolean
+                  default: true
+                  description: Whether to save generated alt-text to database
+
+      responses:
+        '200':
+          description: Alt-text generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      imageId:
+                        type: integer
+                        example: 1234
+                      altText:
+                        type: string
+                        example: "Service de massage relaxant à domicile - Simone Paris"
+                      generatedBy:
+                        type: string
+                        example: "openai-gpt4-vision"
+                      saved:
+                        type: boolean
+                        description: Whether alt-text was saved to database
+                        example: true
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: AI service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error:
+                  code: "AI_SERVICE_ERROR"
+                  message: "Erreur lors de la génération de l'alt-text"
+                  details:
+                    fallback: "Nom du produit - Simone Paris"
+
+  /api/images/moderate:
+    patch:
+      summary: Moderate UGC image
+      description: |
+        Moderate a user-uploaded image in a conversation.
+
+        **Permissions**: Admin/Manager only
+        **Actions**: Approve, reject, or mark for further review
+        **Notification**: User notified on rejection with reason
+
+      operationId: moderateImage
+      tags: [Images, Moderation]
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - attachmentId
+                - status
+              properties:
+                attachmentId:
+                  type: integer
+                  format: int64
+                  description: conversation_attachments.id
+                status:
+                  type: string
+                  enum: [approved, rejected, under_review]
+                  description: Moderation decision
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: Reason for rejection (required if status = rejected)
+
+      responses:
+        '200':
+          description: Moderation completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      attachmentId:
+                        type: integer
+                        example: 789
+                      status:
+                        type: string
+                        example: "approved"
+                      moderatedBy:
+                        type: string
+                        format: uuid
+                        example: "550e8400-e29b-41d4-a716-446655440000"
+                      moderatedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-11T15:45:00Z"
+                      userNotified:
+                        type: boolean
+                        description: Whether user was notified (true for rejections)
+                        example: false
+
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingReason:
+                  value:
+                    success: false
+                    error:
+                      code: "MISSING_REASON"
+                      message: "Raison requise pour les rejets"
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/images/moderation-queue:
+    get:
+      summary: Get moderation queue
+      description: |
+        Fetch pending UGC images for moderation.
+
+        **Permissions**: Admin/Manager only
+        **Pagination**: Supports offset/limit
+        **Filtering**: By status, date range
+
+      operationId: getModerationQueue
+      tags: [Images, Moderation]
+      security:
+        - BearerAuth: []
+
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, under_review]
+            default: pending
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+      responses:
+        '200':
+          description: Moderation queue retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ConversationAttachment'
+                      total:
+                        type: integer
+                        description: Total count of items matching filter
+                        example: 45
+                      limit:
+                        type: integer
+                        example: 20
+                      offset:
+                        type: integer
+                        example: 0
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+
+    ConversationAttachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        conversationId:
+          type: integer
+          format: int64
+        bookingId:
+          type: integer
+          format: int64
+          nullable: true
+        uploadedByUserId:
+          type: string
+          format: uuid
+        uploadedByName:
+          type: string
+          description: User's full name
+        storagePath:
+          type: string
+        publicUrl:
+          type: string
+          format: uri
+        altText:
+          type: string
+          nullable: true
+        moderationStatus:
+          type: string
+          enum: [pending, approved, rejected, under_review]
+        moderatedBy:
+          type: string
+          format: uuid
+          nullable: true
+        moderatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        moderationReason:
+          type: string
+          nullable: true
+        fileSizeBytes:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "Paramètres invalides"
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Authentication requise"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "FORBIDDEN"
+              message: "Permissions insuffisantes"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: "NOT_FOUND"
+              message: "Ressource introuvable"
