@@ -4,13 +4,16 @@
  * Admin Contractor Detail Page
  * Feature: 018-international-market-segmentation
  * Task: T049 - Add contractor_code display to contractor detail page
+ * Task: T059 - Add market_id dropdown to contractor edit form
  *
  * Displays detailed information about a specific contractor including their unique code
- * and market assignment.
+ * and market assignment. Allows admins to edit market assignment.
  */
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CodeHeader } from '@/components/admin/CodeDisplay';
+import { EditContractorMarketModal } from '@/components/admin/EditContractorMarketModal';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
@@ -21,6 +24,7 @@ import {
   Calendar,
   Briefcase,
   Globe,
+  Edit2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -30,6 +34,7 @@ export default function AdminContractorDetailPage() {
   const params = useParams();
   const router = useRouter();
   const contractorId = params.id as string;
+  const [isEditMarketModalOpen, setIsEditMarketModalOpen] = useState(false);
 
   // Fetch contractor details with market info
   const { data: contractor, isLoading, error } = useQuery({
@@ -235,10 +240,20 @@ export default function AdminContractorDetailPage() {
             {/* Market Information */}
             {contractor.market && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Marché assigné
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Marché assigné
+                  </h2>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditMarketModalOpen(true)}
+                  >
+                    <Edit2 className="h-3.5 w-3.5 mr-1" />
+                    Modifier
+                  </Button>
+                </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Nom</span>
@@ -405,6 +420,17 @@ export default function AdminContractorDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Market Modal */}
+      {contractor.market && (
+        <EditContractorMarketModal
+          contractorId={contractorId}
+          currentMarketId={contractor.market.id}
+          currentMarketName={contractor.market.name}
+          isOpen={isEditMarketModalOpen}
+          onClose={() => setIsEditMarketModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -79,6 +79,11 @@ export default function AdminContractorsPage() {
                 </div>
                 <div className="text-sm text-gray-600">Prestataires</div>
               </div>
+              <Link href="/admin/contractors/new">
+                <Button>
+                  + Nouveau prestataire
+                </Button>
+              </Link>
               <Link href="/admin/contractors/applications">
                 <Button variant="outline">
                   Voir les candidatures
