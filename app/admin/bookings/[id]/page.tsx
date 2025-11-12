@@ -26,6 +26,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  Globe,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -99,6 +100,18 @@ export default function AdminBookingDetailsPage() {
     )
   }
 
+  const getMarketBadge = (market: { code: string; name: string; currency_code: string } | null | undefined) => {
+    if (!market) return null
+
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-teal-100 text-teal-800">
+        <Globe className="w-3.5 h-3.5" />
+        <span>{market.name}</span>
+        <span className="text-xs opacity-75">({market.code})</span>
+      </span>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -150,8 +163,9 @@ export default function AdminBookingDetailsPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Réservation #{booking.id}
               </h1>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 {getStatusBadge(booking.status)}
+                {booking.contractor?.market && getMarketBadge(booking.contractor.market)}
                 {booking.payment_status && (
                   <span className="text-sm text-gray-600">
                     Paiement: <strong>{booking.payment_status}</strong>
