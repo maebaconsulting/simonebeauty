@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Paramètres de requête invalides', details: error.errors },
+        { error: 'Paramètres de requête invalides', details: error.issues },
         { status: 400 }
       );
     }
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }

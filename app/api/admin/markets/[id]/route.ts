@@ -71,7 +71,7 @@ export async function GET(
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'ID marché invalide', details: error.errors },
+        { error: 'ID marché invalide', details: error.issues },
         { status: 400 }
       );
     }
@@ -131,7 +131,7 @@ export async function PUT(
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.errors },
+        { error: 'Données invalides', details: error.issues },
         { status: 400 }
       );
     }
@@ -214,7 +214,7 @@ export async function DELETE(
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'ID marché invalide', details: error.errors },
+        { error: 'ID marché invalide', details: error.issues },
         { status: 400 }
       );
     }

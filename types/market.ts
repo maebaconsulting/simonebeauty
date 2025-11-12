@@ -140,3 +140,15 @@ export interface MarketSortOptions {
   field: MarketSortField;
   order: SortOrder;
 }
+
+/**
+ * Query parameters for listing markets with pagination and filters
+ */
+export interface MarketListQuery {
+  page?: number;
+  limit?: number;
+  is_active?: boolean;
+  search?: string;
+  sort?: MarketSortField;
+  order?: SortOrder;
+}
