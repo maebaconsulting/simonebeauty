@@ -11,9 +11,10 @@
 
 import { useState } from 'react';
 import { useSearchContractors } from '@/hooks/useContractorCode';
+import { useMarkets } from '@/hooks/useMarkets';
 import { CodeDisplay } from '@/components/admin/CodeDisplay';
 import { Button } from '@/components/ui/button';
-import { Search, Users, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight, Building2, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminContractorsPage() {
@@ -34,6 +35,9 @@ export default function AdminContractorsPage() {
     sort: sortField,
     order: sortOrder,
   });
+
+  // Fetch markets for filter dropdown
+  const { data: marketsData } = useMarkets({ limit: 100 });
 
   const contractors = data?.data || [];
   const pagination = data?.pagination;
@@ -106,6 +110,24 @@ export default function AdminContractorsPage() {
 
         {/* Additional Filters */}
         <div className="flex gap-3">
+          {/* Market Filter */}
+          <select
+            value={marketFilter || 'all'}
+            onChange={(e) => {
+              setMarketFilter(e.target.value === 'all' ? undefined : Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+            <option value="all">Tous les marchés</option>
+            {marketsData?.data.map((market) => (
+              <option key={market.id} value={market.id}>
+                {market.name} ({market.code})
+              </option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
           <select
             value={activeFilter === undefined ? 'all' : activeFilter ? 'active' : 'inactive'}
             onChange={(e) => {
