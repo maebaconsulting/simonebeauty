@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { MapPin, Check, ArrowLeft, X } from 'lucide-react'
+import { MapPin, Check, ArrowLeft, X, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useUser } from '@/hooks/useUser'
 import { useClientAddresses, useDefaultAddress, useCreateAddress } from '@/hooks/useAddresses'
 import { useUpdateAddressSelection, useBookingSession, useUpdateGuestAddress } from '@/hooks/useBookingSession'
 import { useBookingStore } from '@/stores/useBookingStore'
+import { useMarkets } from '@/hooks/useMarkets'
+import { inferMarketFromCountry, formatMarketDisplay } from '@/lib/utils/market-inference'
 import type { Address } from '@/types/booking'
 import type { DbClientAddress } from '@/types/database'
 
@@ -39,6 +41,13 @@ export default function AddressPage() {
   // Fetch booking session
   const { data: bookingSession } = useBookingSession(sessionId)
 
+  // Fetch markets for inference
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
+
   const [selectedAddress, setSelectedAddress] = useState<DbClientAddress | null>(null)
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [newAddress, setNewAddress] = useState({
@@ -47,9 +56,13 @@ export default function AddressPage() {
     city: '',
     postal_code: '',
     building_info: '',
+    country: 'FR',
     type: 'home' as 'home' | 'work' | 'other',
     is_default: false,
   })
+
+  // Infer market from selected country
+  const inferredMarket = inferMarketFromCountry(newAddress.country, markets)
 
   // Mutations
   const updateAddressSelection = useUpdateAddressSelection()
@@ -133,7 +146,7 @@ export default function AddressPage() {
           street: newAddress.street,
           city: newAddress.city,
           postal_code: newAddress.postal_code,
-          country: 'FR',
+          country: newAddress.country,
           is_default: true,
           created_at: new Date().toISOString(),
         }
@@ -163,7 +176,7 @@ export default function AddressPage() {
       street: newAddress.street,
       city: newAddress.city,
       postal_code: newAddress.postal_code,
-      country: 'FR',
+      country: newAddress.country,
       building_info: newAddress.building_info || undefined,
       is_default: newAddress.is_default,
       is_active: true,
@@ -187,6 +200,7 @@ export default function AddressPage() {
         city: '',
         postal_code: '',
         building_info: '',
+        country: 'FR',
         type: 'home',
         is_default: false,
       })
@@ -407,6 +421,30 @@ export default function AddressPage() {
                       required
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pays <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newAddress.country}
+                    onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-button-primary"
+                  >
+                    {markets.map((market) => (
+                      <option key={market.code} value={market.code}>
+                        {market.name} ({market.code})
+                      </option>
+                    ))}
+                  </select>
+                  {inferredMarket && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">Marché détecté:</span>
+                      <span className="text-blue-700">{formatMarketDisplay(inferredMarket)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

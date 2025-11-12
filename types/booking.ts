@@ -220,6 +220,17 @@ export interface AdminBookingWithDetails extends AdminBooking {
     duration_minutes: number
     base_price: number
   }
+
+  // Contractor with market data
+  contractor?: {
+    market_id: number | null
+    market: {
+      id: number
+      code: string
+      name: string
+      currency_code: string
+    } | null
+  }
 }
 
 /**
@@ -252,6 +263,7 @@ export interface AdminBookingFilters {
   date_from?: string // DATE "YYYY-MM-DD"
   date_to?: string // DATE "YYYY-MM-DD"
   contractor_id?: string
+  market_id?: number // Filter by contractor's market
   page?: number
   limit?: number
 }

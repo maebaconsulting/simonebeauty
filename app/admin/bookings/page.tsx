@@ -9,11 +9,12 @@
 import { useState } from 'react'
 import { AdminBookingStatus, AdminBookingWithDetails, AdminBookingFilters } from '@/types/booking'
 import { useAdminBookings, useCapturePayment, useCancelBooking } from '@/hooks/useAdminBookings'
+import { useMarkets } from '@/hooks/useMarkets'
 import { BookingCard } from '@/components/admin/BookingCard'
 import { CapturePaymentModal } from '@/components/admin/CapturePaymentModal'
 import { CancelBookingModal } from '@/components/admin/CancelBookingModal'
 import { Button } from '@/components/ui/button'
-import { Search, Filter, Calendar as CalendarIcon } from 'lucide-react'
+import { Search, Filter, Calendar as CalendarIcon, Globe } from 'lucide-react'
 
 const STATUS_FILTERS: { value: AdminBookingStatus | 'all', label: string }[] = [
   { value: 'all', label: 'Toutes' },
@@ -30,12 +31,20 @@ export default function AdminBookingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [marketFilter, setMarketFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
   // Modal state
   const [selectedBooking, setSelectedBooking] = useState<AdminBookingWithDetails | null>(null)
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+
+  // Fetch markets for filter
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
 
   // Mutations
   const capturePaymentMutation = useCapturePayment()
@@ -47,6 +56,7 @@ export default function AdminBookingsPage() {
     search: searchQuery || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
+    market_id: marketFilter || undefined,
     page: currentPage,
     limit: 20,
   }
@@ -155,7 +165,7 @@ export default function AdminBookingsPage() {
             </div>
 
             {/* Search and Date Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="md:col-span-1">
                 <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
@@ -210,10 +220,34 @@ export default function AdminBookingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-button-primary focus:border-transparent"
                 />
               </div>
+
+              {/* Market Filter */}
+              <div>
+                <label htmlFor="market" className="block text-sm font-medium text-gray-700 mb-2">
+                  <Globe className="w-4 h-4 inline mr-1" />
+                  Marché
+                </label>
+                <select
+                  id="market"
+                  value={marketFilter || ''}
+                  onChange={(e) => {
+                    setMarketFilter(e.target.value ? Number(e.target.value) : null)
+                    setCurrentPage(1)
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-button-primary focus:border-transparent"
+                >
+                  <option value="">Tous les marchés</option>
+                  {markets.map((market) => (
+                    <option key={market.id} value={market.id}>
+                      {market.code} - {market.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Clear Filters */}
-            {(searchQuery || dateFrom || dateTo || statusFilter !== 'all') && (
+            {(searchQuery || dateFrom || dateTo || marketFilter || statusFilter !== 'all') && (
               <div>
                 <Button
                   variant="outline"
@@ -222,6 +256,7 @@ export default function AdminBookingsPage() {
                     setSearchQuery('')
                     setDateFrom('')
                     setDateTo('')
+                    setMarketFilter(null)
                     setStatusFilter('all')
                     setCurrentPage(1)
                   }}

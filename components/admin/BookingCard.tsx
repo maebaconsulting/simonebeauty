@@ -20,6 +20,7 @@ import {
   XCircle,
   AlertCircle,
   Eye,
+  Globe,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -34,6 +35,17 @@ export function BookingCard({
   onCapturePayment,
   onCancelBooking
 }: BookingCardProps) {
+  const getMarketColor = (code: string): string => {
+    const colors: Record<string, string> = {
+      FR: 'bg-blue-100 text-blue-800 border-blue-200',
+      BE: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      CH: 'bg-red-100 text-red-800 border-red-200',
+      LU: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      CA: 'bg-rose-100 text-rose-800 border-rose-200',
+    };
+    return colors[code] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
   const getStatusBadge = (status: AdminBookingStatus) => {
     const badges = {
       pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -154,6 +166,12 @@ export function BookingCard({
           <div className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
             {booking.service_name || booking.service?.name || 'Service inconnu'}
           </div>
+          {booking.contractor?.market && (
+            <div className={`flex items-center gap-1 px-2 py-1 border rounded text-xs font-medium ${getMarketColor(booking.contractor.market.code)}`}>
+              <Globe className="w-3 h-3" />
+              {booking.contractor.market.code}
+            </div>
+          )}
         </div>
 
         <div className="flex items-start gap-2 text-sm text-gray-600">
