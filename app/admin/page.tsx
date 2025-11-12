@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { useUser } from '@/hooks/useUser'
 import { useBookingStats } from '@/hooks/useAdminBookings'
+import { useMarkets } from '@/hooks/useMarkets'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MarketSelector } from '@/components/admin/MarketSelector'
@@ -32,9 +33,15 @@ import Link from 'next/link'
 export default function AdminDashboardPage() {
   const { user, profile, isLoading } = useUser()
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null)
-  const { data: bookingStats } = useBookingStats()
+  const { data: bookingStats } = useBookingStats(selectedMarket)
 
-  // TODO: Filter stats by selected market when backend supports it
+  // Fetch markets for display
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
+  const currentMarket = selectedMarket ? markets.find(m => m.id === selectedMarket) : null
 
   if (isLoading) {
     return (
@@ -87,6 +94,22 @@ export default function AdminDashboardPage() {
               onChange={setSelectedMarket}
             />
           </div>
+
+          {/* Market Filter Indicator */}
+          {currentMarket && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+              <Globe className="w-4 h-4" />
+              <span>
+                Statistiques filtrées pour: <strong>{currentMarket.name}</strong> ({currentMarket.code})
+              </span>
+              <button
+                onClick={() => setSelectedMarket(null)}
+                className="ml-2 text-blue-600 hover:text-blue-800 font-medium underline"
+              >
+                Voir tous les marchés
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quick Stats */}

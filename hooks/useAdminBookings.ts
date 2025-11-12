@@ -162,14 +162,20 @@ export function useCancelBooking() {
 
 /**
  * Fetch booking statistics for dashboard
+ * @param market_id - Optional market ID to filter stats by market
  */
-export function useBookingStats() {
+export function useBookingStats(market_id?: number | null) {
   return useQuery({
-    queryKey: ['admin-booking-stats'],
+    queryKey: ['admin-booking-stats', market_id],
     queryFn: async () => {
-      // TODO: Create dedicated stats endpoint
-      // For now, fetch all bookings and compute stats client-side
-      const response = await fetch('/api/admin/bookings?limit=1000');
+      // Build query params
+      const params = new URLSearchParams();
+      params.set('limit', '1000');
+      if (market_id) {
+        params.set('market_id', market_id.toString());
+      }
+
+      const response = await fetch(`/api/admin/bookings?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch booking stats');
