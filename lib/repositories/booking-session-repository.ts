@@ -340,6 +340,7 @@ export class BookingSessionRepository {
       street: string
       city: string
       postal_code: string
+      country?: string // ISO 3166-1 alpha-2 country code
       latitude?: number
       longitude?: number
       building_info?: string
@@ -405,6 +406,7 @@ export class BookingSessionRepository {
       street: string
       city: string
       postal_code: string
+      country?: string // ISO 3166-1 alpha-2 country code
       latitude?: number
       longitude?: number
       building_info?: string
@@ -419,6 +421,7 @@ export class BookingSessionRepository {
         street: guestAddress.street,
         city: guestAddress.city,
         postal_code: guestAddress.postal_code,
+        country: guestAddress.country || 'FR', // Default to FR if not provided
         latitude: guestAddress.latitude,
         longitude: guestAddress.longitude,
         building_info: guestAddress.building_info,

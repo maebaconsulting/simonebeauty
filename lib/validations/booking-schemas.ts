@@ -157,6 +157,7 @@ export const serviceQuerySchema = z.object({
   is_featured: z.boolean().optional(),
   is_active: z.boolean().optional(),
   search: z.string().optional(),
+  market_id: z.number().int().positive().optional(), // Filter by market availability
   limit: z.number().int().positive().max(100).optional(),
   offset: z.number().int().nonnegative().optional(),
 })

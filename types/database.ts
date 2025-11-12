@@ -68,6 +68,7 @@ export interface DbBookingSession {
     street: string
     city: string
     postal_code: string
+    country?: string // ISO 3166-1 alpha-2 country code
     latitude?: number
     longitude?: number
     building_info?: string

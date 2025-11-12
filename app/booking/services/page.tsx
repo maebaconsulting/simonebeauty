@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Globe } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { useServices, useServiceCategories } from '@/hooks/useServices'
 import {
   useCreateBookingSession,
   useCreateGuestSession,
   useUpdateServiceSelection,
+  useBookingSessionWithRelations,
 } from '@/hooks/useBookingSession'
+import { useMarkets } from '@/hooks/useMarkets'
 import { useBookingStore } from '@/stores/useBookingStore'
 import { createClient } from '@/lib/supabase/client'
+import { getMarketIdFromCountry } from '@/lib/utils/market-inference'
 import type { Service } from '@/types/booking'
 import type { DbService } from '@/types/database'
 
@@ -22,10 +26,29 @@ export default function ServicesPage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
+  // Fetch markets for inference
+  const { data: marketsData } = useMarkets({
+    is_active: true,
+    limit: 100,
+  })
+  const markets = marketsData?.data || []
+
+  // Fetch session with related data to extract address/market
+  const { data: sessionWithRelations } = useBookingSessionWithRelations(sessionId)
+
+  // Extract country from session address (guest or authenticated)
+  const addressCountry = sessionWithRelations?.is_guest
+    ? sessionWithRelations.guest_address?.country
+    : sessionWithRelations?.address?.country
+
+  // Infer market from address country
+  const marketId = addressCountry ? getMarketIdFromCountry(addressCountry, markets) : null
+
   // Fetch services and categories from database
   const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories()
   const { data: services = [], isLoading: servicesLoading } = useServices({
-    categorySlug: selectedCategory || undefined,
+    category: selectedCategory || undefined,
+    market_id: marketId || undefined, // Filter by market if address exists
   })
 
   // Mutations
@@ -161,6 +184,9 @@ export default function ServicesPage() {
     )
   }
 
+  // Find the market object for display
+  const filteredMarket = marketId ? markets.find((m) => m.id === marketId) : null
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -172,6 +198,16 @@ export default function ServicesPage() {
           <p className="text-gray-600 text-lg">
             Choisissez le service qui vous convient
           </p>
+
+          {/* Market Filter Indicator */}
+          {filteredMarket && (
+            <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+              <Globe className="w-4 h-4" />
+              <span>
+                Services disponibles en <strong>{filteredMarket.name}</strong> ({filteredMarket.code})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Categories */}

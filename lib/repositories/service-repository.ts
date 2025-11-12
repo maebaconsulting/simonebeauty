@@ -17,6 +17,53 @@ export class ServiceRepository {
    */
   async getServices(params?: ServiceQueryParams): Promise<DbService[]> {
     const supabase = this.getClient()
+
+    // If market_id filter is provided, we need to filter by service_market_availability
+    if (params?.market_id) {
+      // First, get service IDs available in the specified market
+      const { data: availableServiceIds, error: marketError } = await supabase
+        .from('service_market_availability')
+        .select('service_id')
+        .eq('market_id', params.market_id)
+
+      if (marketError) {
+        throw new Error(`Failed to fetch market availability: ${marketError.message}`)
+      }
+
+      const serviceIds = (availableServiceIds || []).map((item) => item.service_id)
+
+      // If no services are available in this market, return empty array
+      if (serviceIds.length === 0) {
+        return []
+      }
+
+      // Now query services filtering by these IDs
+      let query = supabase
+        .from('services')
+        .select(`
+          *,
+          service_images (
+            id,
+            storage_path,
+            display_order,
+            is_primary,
+            alt_text,
+            file_size_bytes,
+            width,
+            height
+          )
+        `)
+        .in('id', serviceIds)
+        .eq('is_active', true)
+        .is('service_images.deleted_at', null)
+        .order('display_order', { ascending: true })
+        .order('name', { ascending: true })
+
+      // Apply other filters
+      return this.applyFilters(query, params)
+    }
+
+    // Standard query without market filtering
     let query = supabase
       .from('services')
       .select(`
@@ -38,6 +85,16 @@ export class ServiceRepository {
       .order('name', { ascending: true })
 
     // Apply filters
+    return this.applyFilters(query, params)
+  }
+
+  /**
+   * Apply common filters to a service query
+   */
+  private async applyFilters(query: any, params?: ServiceQueryParams): Promise<DbService[]> {
+    const supabase = this.getClient()
+
+    // Apply category filter
     if (params?.category) {
       // Check if category is a number (category_id) or string (category slug)
       const categoryId = Number(params.category)
