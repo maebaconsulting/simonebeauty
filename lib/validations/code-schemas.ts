@@ -23,7 +23,7 @@ export const contractorCodeSchema = z
  * Schema for searching clients
  */
 export const searchClientsQuerySchema = z.object({
-  search: z.string().optional(),
+  search: z.string().nullable().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   sort: z
@@ -38,8 +38,8 @@ export type SearchClientsQuery = z.infer<typeof searchClientsQuerySchema>;
  * Schema for searching contractors
  */
 export const searchContractorsQuerySchema = z.object({
-  search: z.string().optional(),
-  market_id: z.coerce.number().int().positive().optional(),
+  search: z.string().nullable().optional(),
+  market_id: z.coerce.number().int().positive().nullable().optional(),
   is_active: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

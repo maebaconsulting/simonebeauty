@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
     const queryParams = {
-      search: searchParams.get('search'),
+      search: searchParams.get('search') || undefined,
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20',
       sort: searchParams.get('sort') || 'created_at',
