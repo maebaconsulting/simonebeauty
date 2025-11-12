@@ -12,6 +12,9 @@ export type InterviewMode = 'video' | 'phone' | 'in_person'
 export interface ContractorApplication {
   id: number
 
+  // Market Assignment (Feature 018)
+  market_id: number // Geographic market for this application
+
   // Step 1: Personal Info
   first_name: string
   last_name: string
