@@ -1,140 +1,79 @@
-/**
- * API Routes: /api/admin/contractors
- * Feature: 018-international-market-segmentation
- *
- * GET /api/admin/contractors - Search contractors by code, name, market
- */
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { searchContractorsQuerySchema } from '@/lib/validations/code-schemas';
-import { ZodError } from 'zod';
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/admin/contractors
- * Search and list contractors with pagination
+ * List all contractors with optional search (admin/manager only)
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication and authorization
-    const supabase = await createClient();
+    const supabase = await createClient()
+
+    // Verify admin/manager access
     const {
       data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check user role (admin or manager only)
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .single()
 
-    if (!profile || !['admin', 'manager'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    if (profile?.role !== 'admin' && profile?.role !== 'manager') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Parse and validate query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const queryParams = {
-      search: searchParams.get('search') || undefined,
-      market_id: searchParams.get('market_id') || undefined,
-      is_active: searchParams.get('is_active') || undefined,
-      page: searchParams.get('page') || '1',
-      limit: searchParams.get('limit') || '20',
-      sort: searchParams.get('sort') || 'created_at',
-      order: searchParams.get('order') || 'desc',
-    };
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams
+    const search = searchParams.get('search') || ''
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = (page - 1) * limit
 
-    const validated = searchContractorsQuerySchema.parse(queryParams);
-    const offset = (validated.page - 1) * validated.limit;
-
-    // Build query with market join
+    // Build query
     let query = supabase
       .from('contractors')
-      .select(
-        `
-        *,
-        market:markets (
-          id,
-          name,
-          code,
-          currency_code
-        )
-      `,
-        { count: 'exact' }
+      .select('*, profiles!inner(*)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    // Add search filter if provided
+    if (search) {
+      // Search by contractor code, name, or specialty
+      const codePattern = search.toUpperCase()
+      query = query.or(
+        `contractor_code.ilike.%${codePattern}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%,specialty.ilike.%${search}%`
       )
-      .not('contractor_code', 'is', null); // Only contractors with codes
-
-    // Apply search filter (code or business name)
-    if (validated.search) {
-      const search = validated.search.trim();
-
-      // Check if search looks like a code (CTR-XXXXXX)
-      if (/^CTR-\d{0,6}$/.test(search)) {
-        // Search by code (exact or partial match)
-        query = query.ilike('contractor_code', `${search}%`);
-      } else {
-        // Search by business name
-        query = query.ilike('business_name', `%${search}%`);
-      }
     }
 
-    // Apply market filter
-    if (validated.market_id !== undefined) {
-      query = query.eq('market_id', validated.market_id);
-    }
-
-    // Apply active status filter
-    if (validated.is_active !== undefined) {
-      query = query.eq('is_active', validated.is_active);
-    }
-
-    // Apply sorting
-    query = query.order(validated.sort, {
-      ascending: validated.order === 'asc',
-    });
-
-    // Apply pagination
-    query = query.range(offset, offset + validated.limit - 1);
-
-    const { data, error, count } = await query;
+    const { data: contractors, error, count } = await query
 
     if (error) {
-      console.error('Database error:', error);
-      throw new Error(
-        `Erreur lors de la récupération des prestataires: ${error.message}`
-      );
+      console.error('Error fetching contractors:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch contractors' },
+        { status: 500 }
+      )
     }
-
-    const pages = Math.ceil((count || 0) / validated.limit);
 
     return NextResponse.json({
-      data: data || [],
-      pagination: {
-        page: validated.page,
-        limit: validated.limit,
-        total: count || 0,
-        pages,
-      },
-    });
+      contractors: contractors || [],
+      total: count || 0,
+      page,
+      limit,
+    })
   } catch (error) {
-    console.error('GET /api/admin/contractors error:', error);
-
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: 'Paramètres de requête invalides', details: error.issues },
-        { status: 400 }
-      );
-    }
-
+    console.error('Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des prestataires' },
+      { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
