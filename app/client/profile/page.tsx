@@ -17,6 +17,7 @@ import { Loader2, User, Save, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
+import { CodeDisplay } from '@/components/admin/CodeDisplay'
 
 interface Profile {
   id: string
@@ -27,6 +28,7 @@ interface Profile {
   date_of_birth: string | null
   preferred_language: string | null
   role: string
+  client_code: string | null
 }
 
 export default function ClientProfilePage() {
@@ -129,6 +131,16 @@ export default function ClientProfilePage() {
           <p className="text-gray-600">
             Gérez vos informations personnelles
           </p>
+          {profileData.client_code && (
+            <div className="mt-4">
+              <CodeDisplay
+                code={profileData.client_code}
+                type="client"
+                variant="header"
+                size="md"
+              />
+            </div>
+          )}
         </div>
 
         {/* Profile Card */}

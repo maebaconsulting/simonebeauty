@@ -43,16 +43,10 @@ export async function GET(
       )
     }
 
-    // Fetch client with counts
+    // Fetch client without broken relations
     const { data: rawClient, error } = await supabase
       .from('profiles')
-      .select(
-        `
-        *,
-        bookings:appointment_bookings(count),
-        addresses:client_addresses(count)
-      `
-      )
+      .select('*')
       .eq('client_code', code)
       .eq('role', 'client')
       .single()
@@ -72,15 +66,18 @@ export async function GET(
       )
     }
 
+    // Get client stats using RPC function
+    const { data: stats } = await supabase
+      .rpc('get_client_stats', { p_profile_id: rawClient.id })
+      .single()
+
     // Transform data to match ClientWithCode type
     const client = {
       ...rawClient,
       _count: {
-        bookings: rawClient.bookings?.[0]?.count || 0,
-        addresses: rawClient.addresses?.[0]?.count || 0,
+        bookings: stats?.bookings_count || 0,
+        addresses: stats?.addresses_count || 0,
       },
-      bookings: undefined, // Remove raw count data
-      addresses: undefined, // Remove raw count data
     }
 
     // Return response matching ClientDetailResponse type

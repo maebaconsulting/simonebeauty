@@ -79,7 +79,18 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin')
   const isContractorRoute = pathname.startsWith('/contractor')
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup')
+  const isOnboardingRoute = pathname.startsWith('/onboarding')
   const isHomepage = pathname === '/'
+
+  // Allow onboarding routes for authenticated users (required after signup)
+  if (isOnboardingRoute) {
+    if (!user) {
+      // Redirect to login if not authenticated
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    // Allow authenticated users to access onboarding
+    return response
+  }
 
   // Redirect to login if accessing protected route without auth
   if (isProtectedRoute && !user) {

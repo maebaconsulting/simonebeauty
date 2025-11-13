@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
+    const market_id = searchParams.get('market_id')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
@@ -41,14 +42,13 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'created_at'
     const order = searchParams.get('order') || 'desc'
 
-    // Build query with counts for bookings and addresses
+    // Build query with market relation
     let query = supabase
       .from('profiles')
       .select(
         `
         *,
-        bookings:appointment_bookings(count),
-        addresses:client_addresses(count)
+        market:markets(id, name, code, currency_code)
       `,
         { count: 'exact' }
       )
@@ -56,12 +56,17 @@ export async function GET(request: NextRequest) {
       .order(sort, { ascending: order === 'asc' })
       .range(offset, offset + limit - 1)
 
+    // Add market filter if provided
+    if (market_id) {
+      query = query.eq('market_id', parseInt(market_id))
+    }
+
     // Add search filter if provided
     if (search) {
       // Search by client code or name
       const codePattern = search.toUpperCase()
       query = query.or(
-        `client_code.ilike.%${codePattern}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
+        `client_code.ilike.%${codePattern}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
       )
     }
 
@@ -75,23 +80,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Transform data to match ClientWithCode type
-    const clients = (rawClients || []).map((client: any) => ({
-      ...client,
-      _count: {
-        bookings: client.bookings?.[0]?.count || 0,
-        addresses: client.addresses?.[0]?.count || 0,
-      },
-      bookings: undefined, // Remove raw count data
-      addresses: undefined, // Remove raw count data
-    }))
+    // Get stats for each client using RPC function
+    const clientsWithStats = await Promise.all(
+      (rawClients || []).map(async (client: any) => {
+        const { data: stats } = await supabase
+          .rpc('get_client_stats', { p_profile_id: client.id })
+          .single()
+
+        return {
+          ...client,
+          _count: {
+            bookings: stats?.bookings_count || 0,
+            addresses: stats?.addresses_count || 0,
+          },
+          market: client.market || null, // Keep market info from join
+        }
+      })
+    )
 
     // Calculate total pages
     const totalPages = Math.ceil((count || 0) / limit)
 
     // Return response matching ClientListResponse type
     return NextResponse.json({
-      data: clients,
+      data: clientsWithStats,
       pagination: {
         page,
         limit,

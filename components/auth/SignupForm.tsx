@@ -35,11 +35,15 @@ export function SignupForm() {
   })
 
   const onSubmit = (data: SignupFormData) => {
-    setEmail(data.email) // Store email for verification page
+    setEmail(data.email) // Store email for later
     signup(data, {
       onSuccess: () => {
-        // Redirect to verification page with email in query
-        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`)
+        // Store email in sessionStorage for onboarding flow
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('signup_email', data.email)
+        }
+        // Redirect to onboarding address page (Step 2)
+        router.push('/onboarding/address')
       },
     })
   }

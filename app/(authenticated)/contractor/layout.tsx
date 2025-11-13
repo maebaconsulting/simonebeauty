@@ -73,8 +73,7 @@ export default function ContractorLayout({ children }: ContractorLayoutProps) {
       name: 'Profil',
       href: '/contractor/profile',
       icon: User,
-      current: pathname === '/contractor/profile',
-      disabled: true
+      current: pathname === '/contractor/profile'
     },
     {
       name: 'Notifications',

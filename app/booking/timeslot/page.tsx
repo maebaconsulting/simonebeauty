@@ -55,12 +55,12 @@ function TimeslotPageContent() {
     }
   }, [service, address, bookingSession, sessionId, router])
 
-  // Generate next 7 days
+  // Generate next 30 days (extended from 7 days)
   const generateDates = () => {
     const dates = []
     const today = new Date()
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 30; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       dates.push(date.toISOString().split('T')[0])

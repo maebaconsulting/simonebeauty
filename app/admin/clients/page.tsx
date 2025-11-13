@@ -11,20 +11,27 @@
 
 import { useState } from 'react';
 import { useSearchClients } from '@/hooks/useClientCode';
+import { useMarkets } from '@/hooks/useMarkets';
 import { CodeDisplay } from '@/components/admin/CodeDisplay';
 import { Button } from '@/components/ui/button';
-import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [marketFilter, setMarketFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<'client_code' | 'first_name' | 'last_name' | 'created_at'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Fetch markets for filter
+  const { data: marketsData } = useMarkets();
+  const markets = marketsData?.data || [];
+
   // Fetch clients with current filters
   const { data, isLoading, error } = useSearchClients({
     search: searchQuery || undefined,
+    market_id: marketFilter || undefined,
     page: currentPage,
     limit: 20,
     sort: sortField,
@@ -76,20 +83,55 @@ export default function AdminClientsPage() {
 
       {/* Search Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <form onSubmit={handleSearch} className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par code (CLI-XXXXXX), nom ou prénom..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+        <form onSubmit={handleSearch} className="space-y-3">
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher par code (CLI-XXXXXX), nom ou prénom..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              Rechercher
+            </Button>
           </div>
-          <Button type="submit" disabled={isLoading}>
-            Rechercher
-          </Button>
+
+          {/* Market Filter */}
+          <div className="flex items-center gap-3">
+            <Filter className="h-5 w-5 text-gray-400" />
+            <select
+              value={marketFilter}
+              onChange={(e) => {
+                setMarketFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Tous les marchés</option>
+              {markets.map((market: any) => (
+                <option key={market.id} value={market.id}>
+                  {market.name} ({market.code})
+                </option>
+              ))}
+            </select>
+            {marketFilter && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setMarketFilter('');
+                  setCurrentPage(1);
+                }}
+              >
+                Réinitialiser
+              </Button>
+            )}
+          </div>
         </form>
 
         {/* Search hint */}
@@ -169,6 +211,9 @@ export default function AdminClientsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Adresses
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Marché
+                    </th>
                     <th
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => toggleSort('created_at')}
@@ -218,6 +263,15 @@ export default function AdminClientsPage() {
                         <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
                           {client._count?.addresses || 0}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {client.market ? (
+                          <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                            {client.market.code}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {new Date(client.created_at).toLocaleDateString('fr-FR')}

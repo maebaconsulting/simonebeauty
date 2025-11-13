@@ -27,10 +27,11 @@ async function fetchClientByCode(
 }
 
 /**
- * Search clients (with optional code search)
+ * Search clients (with optional code search and market filter)
  */
 async function searchClients(params: {
   search?: string;
+  market_id?: string;
   page?: number;
   limit?: number;
   sort?: string;
@@ -39,6 +40,7 @@ async function searchClients(params: {
   const searchParams = new URLSearchParams();
 
   if (params.search) searchParams.set('search', params.search);
+  if (params.market_id) searchParams.set('market_id', params.market_id);
   if (params.page) searchParams.set('page', params.page.toString());
   if (params.limit) searchParams.set('limit', params.limit.toString());
   if (params.sort) searchParams.set('sort', params.sort);
@@ -80,7 +82,7 @@ export function useClientByCode(
 }
 
 /**
- * Hook to search clients with optional code search
+ * Hook to search clients with optional code search and market filter
  *
  * @param params - Search parameters
  * @param options - React Query options
@@ -89,6 +91,7 @@ export function useClientByCode(
  * ```tsx
  * const { data, isLoading } = useSearchClients({
  *   search: 'CLI-000',
+ *   market_id: '1',
  *   page: 1,
  *   limit: 20,
  * });
@@ -97,6 +100,7 @@ export function useClientByCode(
 export function useSearchClients(
   params: {
     search?: string;
+    market_id?: string;
     page?: number;
     limit?: number;
     sort?: string;
