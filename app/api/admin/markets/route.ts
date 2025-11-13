@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       limit: validated.limit,
       filters: {
         is_active: validated.is_active,
-        search: validated.search,
+        search: validated.search || undefined,
       },
       sort: {
         field: validated.sort,

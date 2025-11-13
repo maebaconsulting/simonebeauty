@@ -33,7 +33,7 @@ import { toast } from 'sonner'
 const defaultValues: Partial<ServiceInsertData> = {
   // Core fields
   name: '',
-  slug: '',
+  slug: undefined,
   description: '',
   category_id: undefined,
   subcategory_id: undefined,

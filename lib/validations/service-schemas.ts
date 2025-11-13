@@ -38,14 +38,14 @@ const coreServiceFields = {
     .max(200, 'Le nom ne peut pas dépasser 200 caractères')
     .regex(/^[a-zA-ZÀ-ÿ0-9\s\-']+$/, 'Le nom contient des caractères invalides'),
 
-  slug: z.preprocess(
-    (val) => (val === '' ? undefined : val), // Convert empty string to undefined
+  slug: z.union([
     z.string()
       .min(3, 'Le slug doit contenir au moins 3 caractères')
       .max(200, 'Le slug ne peut pas dépasser 200 caractères')
-      .regex(/^[a-z0-9-]+$/, 'Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets')
-      .optional()
-  ), // Auto-generated from name if not provided
+      .regex(/^[a-z0-9-]+$/, 'Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets'),
+    z.literal(''),
+    z.undefined(),
+  ]).optional(), // Auto-generated from name if not provided
 
   description: z.string()
     .min(10, 'La description doit contenir au moins 10 caractères')
@@ -82,16 +82,13 @@ const coreServiceFields = {
     .nullable(),
 
   // Status & Display
-  is_active: z.boolean()
-    .default(true),
+  is_active: z.boolean(),
 
   display_order: z.number()
     .int()
-    .nonnegative()
-    .default(0),
+    .nonnegative(),
 
-  service_type: serviceTypeSchema
-    .default('at_home'),
+  service_type: serviceTypeSchema,
 }
 
 // =============================================================================
@@ -147,35 +144,27 @@ const extendedServiceFields = {
     .nullable(),
 
   // Client targeting (Configuration tab)
-  for_men: z.boolean()
-    .default(false),
+  for_men: z.boolean(),
 
-  for_women: z.boolean()
-    .default(false),
+  for_women: z.boolean(),
 
-  for_kids: z.boolean()
-    .default(false),
+  for_kids: z.boolean(),
 
   // Business features
-  is_for_entreprise_ready: z.boolean()
-    .default(false),
+  is_for_entreprise_ready: z.boolean(),
 
   // Session management (for packages/cures)
-  has_many_session: z.boolean()
-    .default(false),
+  has_many_session: z.boolean(),
 
   number_of_session: z.number()
     .int()
-    .min(1)
-    .default(1),
+    .min(1),
 
   // Service type flags
-  is_additional_service: z.boolean()
-    .default(false),
+  is_additional_service: z.boolean(),
 
   // Media
   secondary_image_urls: z.array(z.string().url())
-    .default([])
     .optional(),
 
   video_url: z.string()
@@ -185,7 +174,6 @@ const extendedServiceFields = {
 
   // Tags for search & filtering
   tags: z.array(z.string().min(2).max(50))
-    .default([])
     .optional(),
 
   // Cost price (for margin calculation)
@@ -196,8 +184,7 @@ const extendedServiceFields = {
     .nullable(),
 
   // Featured status
-  is_featured: z.boolean()
-    .default(false),
+  is_featured: z.boolean(),
 }
 
 // =============================================================================

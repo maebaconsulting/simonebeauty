@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     try {
       stripeCustomer = await getOrCreateStripeCustomer({
         userId: user.id,
-        email: user.email || profile.email || '',
+        email: user.email || '',
         name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
         phone: profile.phone || undefined,
       });
