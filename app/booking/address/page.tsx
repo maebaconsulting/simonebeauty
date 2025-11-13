@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapPin, Check, ArrowLeft, X, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import { inferMarketFromCountry, formatMarketDisplay } from '@/lib/utils/market-
 import type { Address } from '@/types/booking'
 import type { DbClientAddress } from '@/types/database'
 
-export default function AddressPage() {
+function AddressPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isLoading: userLoading } = useUser()
@@ -548,5 +548,18 @@ export default function AddressPage() {
         )}
       </div>
     </div>
+  )
+}
+
+
+export default function AddressPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">Chargement...</div>
+      </div>
+    }>
+      <AddressPageContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ interface TimeSlot {
   available: boolean
 }
 
-export default function TimeslotPage() {
+function TimeslotPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { service, address, previousStep } = useBookingStore()
@@ -309,5 +309,18 @@ export default function TimeslotPage() {
         />
       )}
     </div>
+  )
+}
+
+
+export default function TimeslotPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">Chargement...</div>
+      </div>
+    }>
+      <TimeslotPageContent />
+    </Suspense>
   )
 }
