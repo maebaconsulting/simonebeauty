@@ -16,6 +16,13 @@ export interface ClientWithCode {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  market_id?: number | null;
+  market?: {
+    id: number;
+    name: string;
+    code: string;
+    currency_code?: string;
+  };
   _count?: {
     bookings: number;
     addresses: number;
