@@ -63,18 +63,24 @@ export function useSignup() {
         }
       }
 
-      // Step 2: Update profile with names (trigger should have created basic profile)
+      // Step 2: Create profile with names
+      // Since the trigger on auth.users is not available, we manually insert the profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .insert({
+          id: authData.user.id,
           first_name,
           last_name,
+          role: 'client',
+          email_verified: false,
         })
-        .eq('id', authData.user.id)
 
       if (profileError) {
-        console.error('Profile update error:', profileError)
-        // Non-blocking: profile will exist but without names
+        console.error('Profile creation error:', profileError)
+        throw {
+          message: 'Database error saving new user',
+          type: 'profile_creation_error',
+        }
       }
 
       // Step 3: Send verification code via API route (temporary workaround)
