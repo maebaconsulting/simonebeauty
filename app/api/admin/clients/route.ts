@@ -37,12 +37,23 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
 
-    // Build query
+    // Get sort parameters
+    const sort = searchParams.get('sort') || 'created_at'
+    const order = searchParams.get('order') || 'desc'
+
+    // Build query with counts for bookings and addresses
     let query = supabase
       .from('profiles')
-      .select('*', { count: 'exact' })
+      .select(
+        `
+        *,
+        bookings:appointment_bookings(count),
+        addresses:client_addresses(count)
+      `,
+        { count: 'exact' }
+      )
       .eq('role', 'client')
-      .order('created_at', { ascending: false })
+      .order(sort, { ascending: order === 'asc' })
       .range(offset, offset + limit - 1)
 
     // Add search filter if provided
@@ -54,7 +65,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: clients, error, count } = await query
+    const { data: rawClients, error, count } = await query
 
     if (error) {
       console.error('Error fetching clients:', error)
@@ -64,11 +75,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Transform data to match ClientWithCode type
+    const clients = (rawClients || []).map((client: any) => ({
+      ...client,
+      _count: {
+        bookings: client.bookings?.[0]?.count || 0,
+        addresses: client.addresses?.[0]?.count || 0,
+      },
+      bookings: undefined, // Remove raw count data
+      addresses: undefined, // Remove raw count data
+    }))
+
+    // Calculate total pages
+    const totalPages = Math.ceil((count || 0) / limit)
+
+    // Return response matching ClientListResponse type
     return NextResponse.json({
-      clients: clients || [],
-      total: count || 0,
-      page,
-      limit,
+      data: clients,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        pages: totalPages,
+      },
     })
   } catch (error) {
     console.error('Unexpected error:', error)
