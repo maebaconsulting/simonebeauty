@@ -1,0 +1,4 @@
+{
+  "*.{ts,tsx}": ["pnpm tsx scripts/type-check.ts"],
+  "supabase/migrations/*.sql": ["pnpm tsx scripts/validate-migrations.ts"]
+}
