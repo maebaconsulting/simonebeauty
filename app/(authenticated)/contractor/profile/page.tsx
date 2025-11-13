@@ -157,7 +157,6 @@ export default function ContractorProfilePage() {
               <CodeDisplay
                 code={contractor.contractor_code}
                 type="contractor"
-                variant="header"
                 size="md"
               />
             </div>
