@@ -5,13 +5,21 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-if (!accountSid || !authToken) {
-  console.warn('⚠️  Twilio credentials not configured. SMS functionality will be disabled.');
+// Validate credentials before initializing client
+const hasValidCredentials =
+  accountSid &&
+  authToken &&
+  accountSid.startsWith('AC') &&
+  accountSid.length > 10 &&
+  authToken.length > 10;
+
+if (!hasValidCredentials) {
+  console.warn('⚠️  Twilio credentials not configured or invalid. SMS functionality will be disabled.');
 }
 
-// Initialize Twilio client (only if credentials are available)
-export const twilioClient = accountSid && authToken
-  ? twilio(accountSid, authToken)
+// Initialize Twilio client (only if credentials are valid)
+export const twilioClient = hasValidCredentials
+  ? twilio(accountSid!, authToken!)
   : null;
 
 // Export configuration
