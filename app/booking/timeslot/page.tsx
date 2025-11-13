@@ -106,7 +106,7 @@ export default function TimeslotPage() {
 
     try {
       // Calculate end time based on service duration
-      const duration = service?.duration || bookingSession?.service?.duration_minutes || 60
+      const duration = service?.duration || 60
       const [startHour, startMinute] = selectedTime.split(':').map(Number)
       const endDate = new Date()
       endDate.setHours(startHour, startMinute + duration)

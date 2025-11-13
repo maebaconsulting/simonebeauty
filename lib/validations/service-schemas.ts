@@ -38,14 +38,12 @@ const coreServiceFields = {
     .max(200, 'Le nom ne peut pas dépasser 200 caractères')
     .regex(/^[a-zA-ZÀ-ÿ0-9\s\-']+$/, 'Le nom contient des caractères invalides'),
 
-  slug: z.union([
-    z.string()
-      .min(3, 'Le slug doit contenir au moins 3 caractères')
-      .max(200, 'Le slug ne peut pas dépasser 200 caractères')
-      .regex(/^[a-z0-9-]+$/, 'Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets'),
-    z.literal(''),
-    z.undefined(),
-  ]).optional(), // Auto-generated from name if not provided
+  slug: z.string()
+    .min(3, 'Le slug doit contenir au moins 3 caractères')
+    .max(200, 'Le slug ne peut pas dépasser 200 caractères')
+    .regex(/^[a-z0-9-]+$/, 'Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets')
+    .optional()
+    .nullable(), // Auto-generated from name if not provided
 
   description: z.string()
     .min(10, 'La description doit contenir au moins 10 caractères')

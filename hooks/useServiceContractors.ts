@@ -108,7 +108,14 @@ export function useAvailableContractors() {
         throw error
       }
 
-      return (data || []) as AvailableContractor[]
+      // Transform profiles array to profile object
+      return (data || []).map((contractor: any) => ({
+        id: contractor.id,
+        business_name: contractor.business_name,
+        professional_title: contractor.professional_title,
+        is_active: contractor.is_active,
+        profile: contractor.profiles?.[0] || null,
+      })) as AvailableContractor[]
     },
   })
 }

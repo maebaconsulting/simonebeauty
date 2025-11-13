@@ -29,7 +29,7 @@ export async function sendBookingConfirmationEmail(
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     // Render the email template
-    const emailHtml = render(
+    const emailHtml = await render(
       BookingConfirmationEmail({
         clientName: data.clientName,
         serviceName: data.serviceName,

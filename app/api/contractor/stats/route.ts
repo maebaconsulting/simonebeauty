@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     // Verify contractor role
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, id')
+      .select('role, id, first_name, last_name')
       .eq('id', user.id)
       .single()
 

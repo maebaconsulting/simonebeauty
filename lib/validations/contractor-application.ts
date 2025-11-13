@@ -48,8 +48,7 @@ export const PersonalInfoSchema = z.object({
 
   country: z.string()
     .min(2, 'Le pays doit contenir au moins 2 caractères')
-    .max(100, 'Le pays ne peut pas dépasser 100 caractères')
-    .default('France'),
+    .max(100, 'Le pays ne peut pas dépasser 100 caractères'),
 })
 
 export type PersonalInfo = z.infer<typeof PersonalInfoSchema>

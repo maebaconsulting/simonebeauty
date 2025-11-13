@@ -197,7 +197,7 @@ export const ImageUploadResponseSchema = z.object({
   error: z.object({
     code: z.string(),
     message: z.string(),
-    details: z.record(z.any()).optional()
+    details: z.record(z.string(), z.any()).optional()
   }).optional()
 })
 

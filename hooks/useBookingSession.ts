@@ -72,10 +72,12 @@ export function useCreateBookingSession() {
       // Set in cache
       queryClient.setQueryData(bookingSessionKeys.detail(data.session_id), data)
 
-      // Invalidate active sessions list
-      queryClient.invalidateQueries({
-        queryKey: bookingSessionKeys.active(data.client_id),
-      })
+      // Invalidate active sessions list (only for authenticated users)
+      if (data.client_id) {
+        queryClient.invalidateQueries({
+          queryKey: bookingSessionKeys.active(data.client_id),
+        })
+      }
     },
   })
 }
@@ -236,7 +238,7 @@ export function useCreateGuestSession() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ guestEmail, source = 'catalog' }: { guestEmail: string; source?: string }) =>
+    mutationFn: ({ guestEmail, source = 'catalog' }: { guestEmail: string; source?: import('@/types/database').BookingSource }) =>
       bookingSessionRepository.createGuestSession(guestEmail, source),
     onSuccess: (data) => {
       // Set in cache

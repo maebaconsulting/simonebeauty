@@ -26,9 +26,7 @@ const marketCodeSchema = z
  * Constrained to supported currencies in database
  */
 const currencyCodeSchema = z.enum(SUPPORTED_CURRENCIES, {
-  errorMap: () => ({
-    message: `Devise non supportée. Valeurs autorisées: ${SUPPORTED_CURRENCIES.join(', ')}`,
-  }),
+  message: `Devise non supportée. Valeurs autorisées: ${SUPPORTED_CURRENCIES.join(', ')}`,
 });
 
 /**
@@ -36,9 +34,7 @@ const currencyCodeSchema = z.enum(SUPPORTED_CURRENCIES, {
  * Constrained to supported timezones in database
  */
 const timezoneSchema = z.enum(SUPPORTED_TIMEZONES, {
-  errorMap: () => ({
-    message: `Fuseau horaire non supporté. Valeurs autorisées: ${SUPPORTED_TIMEZONES.slice(0, 5).join(', ')}, etc.`,
-  }),
+  message: `Fuseau horaire non supporté. Valeurs autorisées: ${SUPPORTED_TIMEZONES.slice(0, 5).join(', ')}, etc.`,
 });
 
 /**
@@ -122,7 +118,7 @@ export const marketIdSchema = z.coerce.number().int().positive({
 export const activeMarketSchema = z.object({
   id: z.number().int().positive(),
   is_active: z.literal(true, {
-    errorMap: () => ({ message: 'Ce marché n\'est pas actif' }),
+    message: 'Ce marché n\'est pas actif',
   }),
 });
 

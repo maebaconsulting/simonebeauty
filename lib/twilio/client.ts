@@ -9,8 +9,10 @@ if (!accountSid || !authToken) {
   console.warn('⚠️  Twilio credentials not configured. SMS functionality will be disabled.');
 }
 
-// Initialize Twilio client
-export const twilioClient = twilio(accountSid, authToken);
+// Initialize Twilio client (only if credentials are available)
+export const twilioClient = accountSid && authToken
+  ? twilio(accountSid, authToken)
+  : null;
 
 // Export configuration
 export const twilioConfig = {

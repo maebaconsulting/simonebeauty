@@ -156,14 +156,9 @@ export async function POST(request: NextRequest) {
     const uploadResult = await uploadImageFile(file, entityType as EntityType, entityId, supabase)
 
     // Extract image dimensions (optional, may fail)
-    let dimensions: { width: number; height: number } | null = null
-    try {
-      // Note: This won't work server-side, would need sharp or similar
-      // For now, dimensions will be null and can be updated client-side
-      dimensions = null
-    } catch (error) {
-      console.warn('Failed to extract dimensions:', error)
-    }
+    // Note: This won't work server-side, would need sharp or similar
+    // For now, dimensions will be null and can be updated client-side
+    const dimensions = null as { width: number; height: number } | null
 
     // Get next display order
     const tableName = getTableNameForEntityType(entityType as EntityType)

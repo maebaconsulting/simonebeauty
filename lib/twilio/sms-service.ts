@@ -23,6 +23,15 @@ export async function sendSMS(
       };
     }
 
+    // Validate Twilio client is initialized
+    if (!twilioClient) {
+      console.error('Twilio client not initialized - credentials missing');
+      return {
+        success: false,
+        error: 'SMS service not configured',
+      };
+    }
+
     // Validate Twilio phone number is configured
     if (!twilioConfig.phoneNumber) {
       console.error('TWILIO_PHONE_NUMBER not configured');

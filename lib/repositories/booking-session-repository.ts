@@ -1,6 +1,7 @@
 // Booking Session Repository - CRUD operations for booking_sessions table
 import { createClient } from '@/lib/supabase/client'
 import type {
+  BookingSource,
   DbBookingSession,
   DbBookingSessionInsert,
   DbBookingSessionUpdate,
@@ -260,8 +261,8 @@ export class BookingSessionRepository {
    */
   async removePromoCode(sessionId: string): Promise<DbBookingSession> {
     return this.updateSession(sessionId, {
-      promo_code_id: null,
-      promo_code: null,
+      promo_code_id: undefined,
+      promo_code: undefined,
       promo_discount_amount: 0,
     })
   }
@@ -287,8 +288,8 @@ export class BookingSessionRepository {
    */
   async removeGiftCard(sessionId: string): Promise<DbBookingSession> {
     return this.updateSession(sessionId, {
-      gift_card_id: null,
-      gift_card_code: null,
+      gift_card_id: undefined,
+      gift_card_code: undefined,
       gift_card_amount: 0,
     })
   }
@@ -302,11 +303,12 @@ export class BookingSessionRepository {
    */
   async createGuestSession(
     guestEmail: string,
-    source: string = 'catalog'
+    source: BookingSource = 'catalog'
   ): Promise<DbBookingSession> {
     const supabase = this.getClient()
 
     const sessionData: DbBookingSessionInsert = {
+      session_id: crypto.randomUUID(),
       client_id: null, // No client_id for guests
       is_guest: true,
       guest_email: guestEmail,
@@ -374,17 +376,19 @@ export class BookingSessionRepository {
     }
 
     // Update session to authenticated
-    const updates: DbBookingSessionUpdate = {
+    // Note: Using type assertion because this migration needs to update client_id,
+    // which is normally protected from updates
+    const updates = {
       client_id: userId,
       is_guest: false,
-      guest_email: null,
+      guest_email: undefined,
       address_id: addressId, // Set address_id from saved guest address
-      guest_address: null, // Clear guest_address as it's now in client_addresses
-    }
+      guest_address: undefined, // Clear guest_address as it's now in client_addresses
+    } as DbBookingSessionUpdate
 
     const { data, error } = await supabase
       .from('booking_sessions')
-      .update(updates)
+      .update(updates as any)
       .eq('session_id', sessionId)
       .select()
       .single()

@@ -16,7 +16,7 @@ import { useBookingStore } from '@/stores/useBookingStore'
 import { createClient } from '@/lib/supabase/client'
 import { getMarketIdFromCountry } from '@/lib/utils/market-inference'
 import type { Service } from '@/types/booking'
-import type { DbService } from '@/types/database'
+import type { DbService, ServiceCategory } from '@/types/database'
 
 export default function ServicesPage() {
   const router = useRouter()
@@ -47,7 +47,7 @@ export default function ServicesPage() {
   // Fetch services and categories from database
   const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories()
   const { data: services = [], isLoading: servicesLoading } = useServices({
-    category: selectedCategory || undefined,
+    category: (selectedCategory as ServiceCategory) || undefined,
     market_id: marketId || undefined, // Filter by market if address exists
   })
 
@@ -76,6 +76,7 @@ export default function ServicesPage() {
       console.log('🔄 Creating authenticated booking session for user:', user.id)
       createAuthSession.mutate(
         {
+          session_id: crypto.randomUUID(),
           client_id: user.id,
           current_step: 1,
           source: 'catalog',
@@ -138,6 +139,7 @@ export default function ServicesPage() {
       id: dbService.id.toString(),
       name: dbService.name,
       description: dbService.description,
+      category: dbService.category,
       duration: Number(dbService.base_duration_minutes), // Convert numeric string to number
       base_price: Number(dbService.base_price), // Convert numeric string to number (keep in cents)
       image_url: imageUrl,

@@ -23,9 +23,9 @@ export async function GET() {
       services: services.map((s) => ({
         id: s.id,
         name: s.name,
-        category_id: s.category_id,
-        subcategory_id: s.subcategory_id,
+        category: s.category,
         price: s.base_price,
+        is_active: s.is_active,
       })),
     })
   } catch (error: any) {

@@ -179,7 +179,8 @@ export async function refundPayment(params: {
   }
 
   if (reason) {
-    refundParams.reason = reason
+    // Type assertion needed because newer Stripe API versions have stricter reason types
+    refundParams.reason = reason as Stripe.RefundCreateParams.Reason
   }
 
   const refund = await stripe.refunds.create(refundParams)

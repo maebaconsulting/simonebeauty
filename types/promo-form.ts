@@ -31,21 +31,21 @@ export const promoCodeFormSchema = z.object({
 
   // Usage limits
   max_uses: z.number().int().positive().nullable().optional(),
-  max_uses_per_user: z.number().int().positive().default(1),
+  max_uses_per_user: z.number().int().positive(),
 
   // Validity period
-  valid_from: z.date().default(() => new Date()),
+  valid_from: z.date(),
   valid_until: z.date().nullable().optional(),
 
   // Restrictions
   min_order_amount: z.number().positive().nullable().optional(),
-  first_booking_only: z.boolean().default(false),
+  first_booking_only: z.boolean(),
   specific_services: z.array(z.number()).nullable().optional(),
   specific_categories: z.array(z.number()).nullable().optional(),
   specific_markets: z.array(z.number()).nullable().optional(),
 
   // Status
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 }).superRefine((data, ctx) => {
   // Validate percentage <= 100
   if (data.discount_type === 'percentage' && data.discount_value > 100) {
