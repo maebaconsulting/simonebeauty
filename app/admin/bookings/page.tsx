@@ -8,13 +8,14 @@
 
 import { useState } from 'react'
 import { AdminBookingStatus, AdminBookingWithDetails, AdminBookingFilters } from '@/types/booking'
-import { useAdminBookings, useCapturePayment, useCancelBooking } from '@/hooks/useAdminBookings'
+import { useAdminBookings, useConfirmBooking, useCapturePayment, useCancelBooking } from '@/hooks/useAdminBookings'
 import { useMarkets } from '@/hooks/useMarkets'
 import { BookingCard } from '@/components/admin/BookingCard'
+import { BookingTable } from '@/components/admin/BookingTable'
 import { CapturePaymentModal } from '@/components/admin/CapturePaymentModal'
 import { CancelBookingModal } from '@/components/admin/CancelBookingModal'
 import { Button } from '@/components/ui/button'
-import { Search, Filter, Calendar as CalendarIcon, Globe } from 'lucide-react'
+import { Search, Filter, Calendar as CalendarIcon, Globe, LayoutGrid, List } from 'lucide-react'
 
 const STATUS_FILTERS: { value: AdminBookingStatus | 'all', label: string }[] = [
   { value: 'all', label: 'Toutes' },
@@ -33,6 +34,7 @@ export default function AdminBookingsPage() {
   const [dateTo, setDateTo] = useState('')
   const [marketFilter, setMarketFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   // Modal state
   const [selectedBooking, setSelectedBooking] = useState<AdminBookingWithDetails | null>(null)
@@ -47,6 +49,7 @@ export default function AdminBookingsPage() {
   const markets = marketsData?.data || []
 
   // Mutations
+  const confirmBookingMutation = useConfirmBooking()
   const capturePaymentMutation = useCapturePayment()
   const cancelBookingMutation = useCancelBooking()
 
@@ -74,6 +77,20 @@ export default function AdminBookingsPage() {
   }, {} as Record<string, number>)
 
   // Modal handlers
+  const handleConfirmBooking = async (bookingId: number) => {
+    if (!confirm('Confirmer cette réservation ? Le paiement ne sera pas capturé immédiatement.')) {
+      return
+    }
+
+    try {
+      await confirmBookingMutation.mutateAsync({ bookingId })
+      alert('Réservation confirmée avec succès')
+      refetch()
+    } catch (error) {
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Échec de la confirmation'}`)
+    }
+  }
+
   const handleCapturePayment = (bookingId: number) => {
     const booking = bookings.find(b => b.id === bookingId)
     if (booking) {
@@ -106,6 +123,32 @@ export default function AdminBookingsPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Vue grille"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Vue liste"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+
               <div className="text-right">
                 <div className="text-2xl font-bold text-gray-900">
                   {pagination?.total || 0}
@@ -289,16 +332,26 @@ export default function AdminBookingsPage() {
           </div>
         ) : bookings.length > 0 ? (
           <>
-            <div className="space-y-4">
-              {bookings.map(booking => (
-                <BookingCard
-                  key={booking.id}
-                  booking={booking}
-                  onCapturePayment={handleCapturePayment}
-                  onCancelBooking={handleCancelBooking}
-                />
-              ))}
-            </div>
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {bookings.map(booking => (
+                  <BookingCard
+                    key={booking.id}
+                    booking={booking}
+                    onConfirmBooking={handleConfirmBooking}
+                    onCapturePayment={handleCapturePayment}
+                    onCancelBooking={handleCancelBooking}
+                  />
+                ))}
+              </div>
+            ) : (
+              <BookingTable
+                bookings={bookings}
+                onConfirmBooking={handleConfirmBooking}
+                onCapturePayment={handleCapturePayment}
+                onCancelBooking={handleCancelBooking}
+              />
+            )}
 
             {/* Pagination */}
             {pagination && pagination.total_pages > 1 && (
@@ -351,6 +404,7 @@ export default function AdminBookingsPage() {
             onClose={() => setIsCaptureModalOpen(false)}
             onCapture={async (data) => {
               await capturePaymentMutation.mutateAsync({
+                booking_id: selectedBooking.id,
                 bookingId: selectedBooking.id,
                 ...data,
               })

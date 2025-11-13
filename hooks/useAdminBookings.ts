@@ -94,6 +94,41 @@ export function useAdminBooking(bookingId: number | string) {
 }
 
 /**
+ * Manual confirm booking mutation
+ * Confirms a pending booking without capturing payment
+ */
+export function useConfirmBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: { bookingId: number; admin_notes?: string; notify_parties?: boolean }) => {
+      const { bookingId, ...body } = request;
+
+      const response = await fetch(`/api/admin/bookings/${bookingId}/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to confirm booking');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-booking', data.booking_id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-booking-stats'] });
+    },
+  });
+}
+
+/**
  * Manual capture payment mutation
  * FR-031: Admin peut forcer capture manuelle
  */

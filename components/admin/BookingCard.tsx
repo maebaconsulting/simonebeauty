@@ -26,12 +26,14 @@ import Link from 'next/link'
 
 interface BookingCardProps {
   booking: AdminBookingWithDetails
+  onConfirmBooking?: (bookingId: number) => void
   onCapturePayment?: (bookingId: number) => void
   onCancelBooking?: (bookingId: number) => void
 }
 
 export function BookingCard({
   booking,
+  onConfirmBooking,
   onCapturePayment,
   onCancelBooking
 }: BookingCardProps) {
@@ -115,24 +117,25 @@ export function BookingCard({
   }
 
   // Determine available actions based on status
+  const canConfirm = booking.status === 'pending'
   const canCapture = ['in_progress', 'completed_by_contractor'].includes(booking.status) &&
                      booking.payment_status !== 'captured'
   const canCancel = ['pending', 'confirmed'].includes(booking.status)
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-semibold text-gray-900">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="text-lg font-semibold text-gray-900">
               Réservation #{booking.id}
             </h3>
             {getStatusBadge(booking.status)}
             {getPaymentStatusBadge(booking.payment_status)}
           </div>
 
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap gap-2 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               {booking.client_name || booking.client_profile?.first_name + ' ' + booking.client_profile?.last_name || 'Client inconnu'}
@@ -149,81 +152,102 @@ export function BookingCard({
         </div>
 
         <div className="text-right">
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-xl font-bold text-gray-900">
             {formatCurrency(booking.service_amount)}
           </div>
           {booking.tip_amount > 0 && (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               + {formatCurrency(booking.tip_amount)} tip
             </div>
           )}
         </div>
       </div>
 
-      {/* Service and Location */}
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-gray-700">
-          <div className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
-            {booking.service_name || booking.service?.name || 'Service inconnu'}
+      {/* Two-column layout for better space usage */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+        {/* LEFT COLUMN */}
+        <div className="space-y-2">
+          {/* Service and Location */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-gray-700">
+              <div className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+                {booking.service_name || booking.service?.name || 'Service inconnu'}
+              </div>
+              {booking.contractor?.market && (
+                <div className={`flex items-center gap-1 px-2 py-1 border rounded text-xs font-medium ${getMarketColor(booking.contractor.market.code)}`}>
+                  <Globe className="w-3 h-3" />
+                  {booking.contractor.market.code}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-start gap-2 text-sm text-gray-600">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <span className="line-clamp-1">
+                {booking.service_address}
+                {booking.service_city && `, ${booking.service_postal_code} ${booking.service_city}`}
+              </span>
+            </div>
           </div>
-          {booking.contractor?.market && (
-            <div className={`flex items-center gap-1 px-2 py-1 border rounded text-xs font-medium ${getMarketColor(booking.contractor.market.code)}`}>
-              <Globe className="w-3 h-3" />
-              {booking.contractor.market.code}
+
+          {/* Contractor Info */}
+          {booking.contractor_profile && (
+            <div className="p-2 bg-gray-50 rounded">
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Prestataire:</span>{' '}
+                {booking.contractor_profile.first_name} {booking.contractor_profile.last_name}
+                {booking.contractor_profile.professional_title && (
+                  <span className="text-gray-500"> • {booking.contractor_profile.professional_title}</span>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-start gap-2 text-sm text-gray-600">
-          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <span className="line-clamp-1">
-            {booking.service_address}
-            {booking.service_city && `, ${booking.service_postal_code} ${booking.service_city}`}
-          </span>
+        {/* RIGHT COLUMN */}
+        <div className="space-y-2">
+          {/* Cancellation Info */}
+          {booking.status === 'cancelled' && booking.cancellation_reason && (
+            <div className="p-2 bg-red-50 border border-red-200 rounded">
+              <h4 className="text-xs font-medium text-red-800 mb-0.5">Raison de l'annulation:</h4>
+              <p className="text-sm text-red-700">{booking.cancellation_reason}</p>
+            </div>
+          )}
+
+          {/* Payment Info for Capture */}
+          {canCapture && (
+            <div className="p-2 bg-blue-50 border border-blue-200 rounded">
+              <div className="flex items-center gap-2 text-blue-800 text-xs">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span className="font-medium">
+                  Paiement pré-autorisé - Capture manuelle requise
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Contractor Info */}
-      {booking.contractor_profile && (
-        <div className="mb-4 p-3 bg-gray-50 rounded">
-          <div className="text-sm text-gray-700">
-            <span className="font-medium">Prestataire:</span>{' '}
-            {booking.contractor_profile.first_name} {booking.contractor_profile.last_name}
-            {booking.contractor_profile.professional_title && (
-              <span className="text-gray-500"> • {booking.contractor_profile.professional_title}</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Cancellation Info */}
-      {booking.status === 'cancelled' && booking.cancellation_reason && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-          <h4 className="text-sm font-medium text-red-800 mb-1">Raison de l'annulation:</h4>
-          <p className="text-sm text-red-700">{booking.cancellation_reason}</p>
-        </div>
-      )}
-
-      {/* Payment Info for Capture */}
-      {canCapture && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-          <div className="flex items-center gap-2 text-blue-800 text-sm">
-            <AlertCircle className="w-4 h-4" />
-            <span className="font-medium">
-              Paiement pré-autorisé - Capture manuelle requise
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+      <div className="flex flex-wrap gap-1.5 pt-3 border-t border-gray-200">
         <Link href={`/admin/bookings/${booking.id}`}>
           <Button variant="outline" size="sm">
             <Eye className="w-4 h-4 mr-1" />
             Voir détails
           </Button>
         </Link>
+
+        {canConfirm && onConfirmBooking && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onConfirmBooking(booking.id)}
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Confirmer
+          </Button>
+        )}
 
         {canCapture && onCapturePayment && (
           <Button

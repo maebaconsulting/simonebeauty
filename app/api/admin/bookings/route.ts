@@ -102,10 +102,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply market filter (via contractor relationship)
+    // We need to filter by contractor's market_id before pagination
     if (filters.market_id) {
-      // Note: This filters at the database level using the joined contractor.market_id
-      // We'll need to post-process results since direct filtering on nested relations isn't supported
-      // For now, we'll filter after the query results
+      // First, get all contractor IDs that belong to this market
+      const { data: marketContractors } = await supabase
+        .from('contractors')
+        .select('id')
+        .eq('market_id', filters.market_id);
+
+      if (marketContractors && marketContractors.length > 0) {
+        const contractorIds = marketContractors.map(c => c.id);
+        query = query.in('contractor_id', contractorIds);
+      } else {
+        // No contractors in this market, return empty results
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: filters.page || 1,
+            limit: filters.limit || 20,
+            total: 0,
+            total_pages: 0,
+          },
+        });
+      }
     }
 
     // Apply search filter (client name, email, booking ID)
@@ -140,16 +160,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Apply market filter (client-side filtering on joined data)
-    let filteredBookings = bookings || [];
-    if (filters.market_id) {
-      filteredBookings = filteredBookings.filter((booking: any) => {
-        return booking.contractor?.market_id === filters.market_id;
-      });
-    }
-
     // Transform data to match AdminBookingWithDetails interface
-    const transformedBookings: AdminBookingWithDetails[] = filteredBookings.map((booking: any) => ({
+    const transformedBookings: AdminBookingWithDetails[] = (bookings || []).map((booking: any) => ({
       ...booking,
       client_profile: booking.client_profile,
       contractor_profile: booking.contractor_profile,
@@ -157,17 +169,14 @@ export async function GET(request: NextRequest) {
       contractor: booking.contractor,
     }));
 
-    // Update count to reflect filtered results
-    const filteredCount = filters.market_id ? transformedBookings.length : (count || 0);
-
     return NextResponse.json({
       success: true,
       data: transformedBookings,
       pagination: {
         page: filters.page || 1,
         limit: filters.limit || 20,
-        total: filteredCount,
-        total_pages: Math.ceil(filteredCount / (filters.limit || 20)),
+        total: count || 0,
+        total_pages: Math.ceil((count || 0) / (filters.limit || 20)),
       },
     });
 

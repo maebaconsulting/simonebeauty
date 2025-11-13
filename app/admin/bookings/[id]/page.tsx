@@ -483,6 +483,7 @@ export default function AdminBookingDetailsPage() {
         onClose={() => setIsCaptureModalOpen(false)}
         onCapture={async (data) => {
           await capturePaymentMutation.mutateAsync({
+            booking_id: booking.id,
             bookingId: booking.id,
             ...data,
           })

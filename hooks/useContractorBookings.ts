@@ -52,6 +52,14 @@ export function usePendingRequests(contractorId: string | undefined) {
       }
 
       const result = await response.json()
+
+      // Debug logging
+      console.log('📥 Received pending requests:', result)
+      if (result.requests && result.requests.length > 0) {
+        console.log('📦 First request booking data:', result.requests[0].booking)
+        console.log('🔍 scheduled_datetime:', result.requests[0].booking?.scheduled_datetime)
+      }
+
       return result.requests as BookingRequest[]
     },
     enabled: !!contractorId,

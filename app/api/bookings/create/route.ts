@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Bookings API] Creating booking with contractor:', contractor_id || 'none (will create open request)');
+    console.log('[Bookings API] Creating booking with contractor:', contractor_id || 'none (open request)', '- Requires manual confirmation');
 
     // Get service details
     const { data: service, error: serviceError } = await supabase
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
         gift_card_id: giftCardId,
         gift_card_code: giftCardCode,
         gift_card_amount: giftCardAmount > 0 ? giftCardAmount : null,
-        status: contractor_id ? 'confirmed' : 'pending', // If contractor assigned, status is confirmed
+        status: 'pending', // Always pending - contractor must manually confirm
         client_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
         client_phone: profile.phone || user.phone || '',
         client_email: user.email || '',
@@ -362,17 +362,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create booking request for contractors to see
-    // If contractor assigned, mark as accepted immediately
-    // Otherwise, create open request that expires in 24 hours
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
+    // Always create as 'pending' - contractor must manually confirm
+    // Request expires 24 hours before the scheduled service
+    const expiresAt = new Date(scheduled_datetime);
+    expiresAt.setHours(expiresAt.getHours() - 24); // Expires 24h before service
 
     const { error: requestError } = await supabase
       .from('booking_requests')
       .insert({
         booking_id: booking.id,
         contractor_id: contractor_id || null, // Assigned contractor or null for open request
-        status: contractor_id ? 'accepted' : 'pending', // If contractor assigned, immediately accepted
+        status: 'pending', // Always pending - contractor must manually confirm
         expires_at: expiresAt.toISOString(),
         created_at: new Date().toISOString(),
       });
@@ -431,7 +431,9 @@ export async function POST(request: NextRequest) {
       payment_intent_id: paymentIntent?.id || null,
       payment_intent_client_secret: paymentIntent?.client_secret || null,
       stripe_customer_id: stripeCustomer.id,
-      message: paymentIntent ? 'Booking created successfully with payment pre-authorization' : 'Booking created successfully - fully covered by promo/gift card',
+      message: paymentIntent
+        ? 'Réservation créée avec succès - En attente de confirmation du prestataire'
+        : 'Réservation créée avec succès (couverte par code promo/carte cadeau) - En attente de confirmation du prestataire',
     }, { status: 201 });
 
   } catch (error) {

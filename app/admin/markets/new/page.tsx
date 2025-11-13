@@ -35,14 +35,14 @@ export default function CreateMarketPage() {
     formState: { errors, isSubmitting },
     setValue,
     watch,
-  } = useForm<CreateMarketInput>({
+  } = useForm({
     resolver: zodResolver(createMarketSchema),
     defaultValues: {
       name: '',
       code: '',
-      currency_code: 'EUR',
-      timezone: 'Europe/Paris',
-      supported_languages: ['fr'],
+      currency_code: 'EUR' as const,
+      timezone: 'Europe/Paris' as const,
+      supported_languages: ['fr' as const],
       is_active: true,
     },
   });
@@ -52,7 +52,7 @@ export default function CreateMarketPage() {
       const result = await createMarket.mutateAsync(data);
 
       toast.success('Marché créé avec succès!', {
-        description: `Le marché "${result.name}" (${result.code}) a été créé.`,
+        description: `Le marché "${result.data.name}" (${result.data.code}) a été créé.`,
       });
 
       router.push('/admin/markets');

@@ -114,94 +114,103 @@ export function ApplicationCard({
         </div>
       </div>
 
-      {/* Contact Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm">
-        <div className="flex items-center gap-2 text-gray-700">
-          <Mail className="w-4 h-4 text-gray-400" />
-          <a href={`mailto:${application.email}`} className="hover:text-button-primary">
-            {application.email}
-          </a>
+      {/* Two-column layout for better space usage */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        {/* LEFT COLUMN */}
+        <div className="space-y-4">
+          {/* Contact Info */}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-gray-700">
+              <Mail className="w-4 h-4 text-gray-400" />
+              <a href={`mailto:${application.email}`} className="hover:text-button-primary">
+                {application.email}
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-700">
+              <Phone className="w-4 h-4 text-gray-400" />
+              <a href={`tel:${application.phone}`} className="hover:text-button-primary">
+                {application.phone}
+              </a>
+            </div>
+
+            <div className="flex items-start gap-2 text-gray-700">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+              <span className="line-clamp-1">{application.address}</span>
+            </div>
+          </div>
+
+          {/* Geographic Zones */}
+          {application.geographic_zones && application.geographic_zones.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Zones géographiques:</h4>
+              <div className="flex flex-wrap gap-1">
+                {application.geographic_zones.slice(0, 5).map((zone, index) => (
+                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                    {zone}
+                  </span>
+                ))}
+                {application.geographic_zones.length > 5 && (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">
+                    +{application.geographic_zones.length - 5} autres
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Documents Badge */}
+          {hasDocuments && (
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded text-sm">
+                <FileText className="w-4 h-4" />
+                Documents fournis
+                {application.cv_file_path && ' (CV)'}
+                {application.certifications_file_paths && application.certifications_file_paths.length > 0 && ' (Certifications)'}
+                {application.portfolio_file_paths && application.portfolio_file_paths.length > 0 && ' (Portfolio)'}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 text-gray-700">
-          <Phone className="w-4 h-4 text-gray-400" />
-          <a href={`tel:${application.phone}`} className="hover:text-button-primary">
-            {application.phone}
-          </a>
-        </div>
+        {/* RIGHT COLUMN */}
+        <div className="space-y-4">
+          {/* Motivation Preview */}
+          <div className="p-3 bg-gray-50 rounded">
+            <h4 className="text-sm font-medium text-gray-700 mb-1">Motivation:</h4>
+            <p className="text-sm text-gray-600 line-clamp-3">
+              {application.motivation}
+            </p>
+          </div>
 
-        <div className="flex items-start gap-2 text-gray-700 md:col-span-2">
-          <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-          <span className="line-clamp-1">{application.address}</span>
+          {/* Interview Info (if scheduled) */}
+          {application.status === 'interview_scheduled' && application.interview_date && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Entretien prévu le {formatDate(application.interview_date)}
+                </span>
+                {application.interview_mode && (
+                  <span className="text-xs bg-blue-100 px-2 py-0.5 rounded">
+                    {application.interview_mode === 'video' ? 'Visio' :
+                     application.interview_mode === 'phone' ? 'Téléphone' :
+                     'En personne'}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Rejection Info */}
+          {application.status === 'rejected' && application.rejection_reason && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded">
+              <h4 className="text-sm font-medium text-red-800 mb-1">Raison du refus:</h4>
+              <p className="text-sm text-red-700">{application.rejection_reason}</p>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Geographic Zones */}
-      {application.geographic_zones && application.geographic_zones.length > 0 && (
-        <div className="mb-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Zones géographiques:</h4>
-          <div className="flex flex-wrap gap-1">
-            {application.geographic_zones.slice(0, 5).map((zone, index) => (
-              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                {zone}
-              </span>
-            ))}
-            {application.geographic_zones.length > 5 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">
-                +{application.geographic_zones.length - 5} autres
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Documents Badge */}
-      {hasDocuments && (
-        <div className="mb-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded text-sm">
-            <FileText className="w-4 h-4" />
-            Documents fournis
-            {application.cv_file_path && ' (CV)'}
-            {application.certifications_file_paths && application.certifications_file_paths.length > 0 && ' (Certifications)'}
-            {application.portfolio_file_paths && application.portfolio_file_paths.length > 0 && ' (Portfolio)'}
-          </div>
-        </div>
-      )}
-
-      {/* Motivation Preview */}
-      <div className="mb-4 p-3 bg-gray-50 rounded">
-        <h4 className="text-sm font-medium text-gray-700 mb-1">Motivation:</h4>
-        <p className="text-sm text-gray-600 line-clamp-2">
-          {application.motivation}
-        </p>
-      </div>
-
-      {/* Interview Info (if scheduled) */}
-      {application.status === 'interview_scheduled' && application.interview_date && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-          <div className="flex items-center gap-2 text-blue-800">
-            <Calendar className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              Entretien prévu le {formatDate(application.interview_date)}
-            </span>
-            {application.interview_mode && (
-              <span className="text-xs bg-blue-100 px-2 py-0.5 rounded">
-                {application.interview_mode === 'video' ? 'Visio' :
-                 application.interview_mode === 'phone' ? 'Téléphone' :
-                 'En personne'}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Rejection Info */}
-      {application.status === 'rejected' && application.rejection_reason && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-          <h4 className="text-sm font-medium text-red-800 mb-1">Raison du refus:</h4>
-          <p className="text-sm text-red-700">{application.rejection_reason}</p>
-        </div>
-      )}
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">

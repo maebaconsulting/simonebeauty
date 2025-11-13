@@ -3,11 +3,12 @@
  * Task: T071
  * Feature: 007-contractor-interface
  *
- * Handles booking acceptance:
+ * Handles booking confirmation (WITHOUT payment capture):
  * 1) Update booking_requests.status='accepted'
- * 2) Capture Stripe PaymentIntent
- * 3) Update appointment_bookings.status='confirmed'
- * 4) Send confirmation email to client
+ * 2) Update appointment_bookings.status='confirmed'
+ * 3) Send confirmation SMS to client
+ *
+ * Note: Payment capture happens separately when booking is completed
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -113,39 +114,10 @@ serve(async (req) => {
       ? bookingRequest.appointment_bookings[0]
       : bookingRequest.appointment_bookings
 
-    if (!booking || !booking.stripe_payment_intent_id) {
+    if (!booking) {
       return new Response(
-        JSON.stringify({ error: 'Booking or payment intent not found' }),
+        JSON.stringify({ error: 'Booking not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Capture Stripe PaymentIntent
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-    if (!stripeSecretKey) {
-      return new Response(
-        JSON.stringify({ error: 'Stripe configuration missing' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const stripeResponse = await fetch(
-      `https://api.stripe.com/v1/payment_intents/${booking.stripe_payment_intent_id}/capture`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${stripeSecretKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    )
-
-    if (!stripeResponse.ok) {
-      const stripeError = await stripeResponse.json()
-      console.error('Stripe capture error:', stripeError)
-      return new Response(
-        JSON.stringify({ error: 'Payment capture failed', details: stripeError }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -283,12 +255,12 @@ Simone Paris`
     }
 
     // TODO: Send confirmation email to client (via Resend)
-    console.log(`✅ Booking request ${request_id} accepted, payment captured`)
+    console.log(`✅ Booking request ${request_id} accepted (confirmed)`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Booking accepted and payment captured',
+        message: 'Booking confirmed successfully',
         booking_id: booking.id,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

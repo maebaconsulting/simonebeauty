@@ -50,6 +50,16 @@ export function BookingRequestCard({
     return null
   }
 
+  // Check if scheduled_datetime exists
+  if (!booking.scheduled_datetime) {
+    console.error('Missing scheduled_datetime for booking:', booking)
+    return (
+      <Card className="p-4 bg-red-50 border-red-200">
+        <p className="text-red-800">Erreur: Date de réservation manquante (ID: {request.booking_id})</p>
+      </Card>
+    )
+  }
+
   // Convert UTC datetime to Paris local time
   const scheduledDateTimeUTC = parseISO(booking.scheduled_datetime)
 
@@ -90,7 +100,7 @@ export function BookingRequestCard({
   }
 
   return (
-    <Card className={`p-6 ${isExpiringSoon ? 'border-l-4 border-l-orange-500' : ''}`}>
+    <Card className={`p-4 ${isExpiringSoon ? 'border-l-4 border-l-orange-500' : ''}`}>
       {/* Expiration Warning */}
       {isExpiringSoon && (
         <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
@@ -107,11 +117,11 @@ export function BookingRequestCard({
       )}
 
       {/* Request Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-1.5 mb-0.5">
             <Calendar className="w-5 h-5 text-purple-600" />
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-base font-semibold text-gray-900">
               {formatDate()}
             </p>
           </div>
@@ -122,7 +132,7 @@ export function BookingRequestCard({
         </div>
         <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg">
           <Euro className="w-5 h-5 text-purple-600" />
-          <span className="text-lg font-bold text-purple-900">
+          <span className="text-base font-bold text-purple-900">
             {booking.service_amount.toFixed(2)}€
           </span>
         </div>
@@ -130,8 +140,8 @@ export function BookingRequestCard({
 
       {/* Service Info */}
       {booking.service_name && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 mb-1">
             <Package className="w-5 h-5 text-gray-600" />
             <p className="font-medium text-gray-900">{booking.service_name}</p>
           </div>
@@ -148,8 +158,8 @@ export function BookingRequestCard({
       )}
 
       {/* Client Info */}
-      <div className="mb-6 space-y-2">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">Informations client</h4>
+      <div className="mb-2 space-y-1.5">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">Informations client</h4>
         {booking.client_name && (
           <div className="flex items-center gap-2 text-sm text-gray-700">
             <User className="w-4 h-4 text-gray-500" />
@@ -177,13 +187,13 @@ export function BookingRequestCard({
       {/* Details Toggle */}
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="text-sm text-purple-600 hover:text-purple-700 mb-4"
+        className="text-sm text-purple-600 hover:text-purple-700 mb-2"
       >
         {showDetails ? '▼' : '▶'} Détails de la demande
       </button>
 
       {showDetails && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-600 space-y-1">
+        <div className="mb-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600 space-y-1">
           <p><strong>Demande reçue:</strong> {formatDateTime(request.requested_at)}</p>
           <p><strong>Expire le:</strong> {formatDateTime(request.expires_at)}</p>
           <p><strong>Délai restant:</strong> {hoursRemaining}h</p>
@@ -212,9 +222,9 @@ export function BookingRequestCard({
       </div>
 
       {/* Important Note */}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-xs text-blue-800">
-          <strong>Important :</strong> En acceptant cette demande, le paiement du client sera automatiquement capturé et la réservation sera confirmée.
+      <div className="mt-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-[11px] text-blue-800">
+          <strong>Important :</strong> En acceptant, vous confirmez la réservation. Le paiement sera capturé après avoir marqué le service comme terminé.
         </p>
       </div>
     </Card>

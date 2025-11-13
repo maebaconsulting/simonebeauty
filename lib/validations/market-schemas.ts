@@ -65,7 +65,7 @@ export const createMarketSchema = z.object({
   currency_code: currencyCodeSchema,
   timezone: timezoneSchema,
   supported_languages: languageCodesSchema,
-  is_active: z.boolean().optional().default(true),
+  is_active: z.boolean().default(true),
 });
 
 export type CreateMarketInput = z.infer<typeof createMarketSchema>;

@@ -37,7 +37,7 @@ export default function ContractorDashboardPage() {
 
   // For now, we'll show a simple message about today's bookings
   // TODO: Implement proper today's bookings query when needed
-  const todayBookings = useMemo(() => [], [])
+  const todayBookings = useMemo(() => [] as any[], [])
   const bookingsLoading = false
 
   const isLoading = userLoading || statsLoading

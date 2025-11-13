@@ -112,9 +112,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
     {
       name: 'Codes Promo',
-      href: '/admin/promo-codes',
+      href: '/admin/promotions',
       icon: Tag,
-      current: pathname?.startsWith('/admin/promo-codes')
+      current: pathname?.startsWith('/admin/promotions')
     },
     {
       name: 'Marchés',

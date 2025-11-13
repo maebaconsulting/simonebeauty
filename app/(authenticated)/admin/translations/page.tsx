@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Database, FileText, Tag, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'

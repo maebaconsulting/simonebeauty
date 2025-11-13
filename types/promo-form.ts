@@ -87,3 +87,17 @@ export interface PromoCodeFormSubmit {
   specific_markets?: number[] | null
   is_active: boolean
 }
+
+/**
+ * Helper function to transform PromoCodeFormData to PromoCodeFormSubmit
+ * Converts Date objects to ISO string timestamps
+ */
+export function transformFormDataToSubmit(
+  formData: PromoCodeFormData
+): PromoCodeFormSubmit {
+  return {
+    ...formData,
+    valid_from: formData.valid_from.toISOString(),
+    valid_until: formData.valid_until?.toISOString() || null,
+  }
+}

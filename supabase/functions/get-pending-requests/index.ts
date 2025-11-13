@@ -140,6 +140,16 @@ serve(async (req) => {
         ? request.appointment_bookings[0]
         : request.appointment_bookings
 
+      // Log raw booking data for debugging
+      console.log('🔍 Raw request data:', {
+        request_id: request.id,
+        booking_id: request.booking_id,
+        has_appointment_bookings: !!request.appointment_bookings,
+        appointment_bookings_type: Array.isArray(request.appointment_bookings) ? 'array' : typeof request.appointment_bookings,
+        booking_exists: !!booking,
+        booking_scheduled_datetime: booking?.scheduled_datetime,
+      })
+
       return {
         id: request.id,
         booking_id: request.booking_id,
@@ -172,6 +182,9 @@ serve(async (req) => {
     })
 
     console.log(`✅ Fetched ${transformedRequests.length} pending requests for contractor ${contractor_id}`)
+    if (transformedRequests.length > 0) {
+      console.log('📦 Sample transformed request:', JSON.stringify(transformedRequests[0], null, 2))
+    }
 
     return new Response(
       JSON.stringify({
