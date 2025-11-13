@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 // GET: Fetch all supplements for a service
 export async function GET(
   request: NextRequest,

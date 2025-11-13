@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrCreateStripeCustomer } from '@/lib/stripe/payment'
 import { stripe } from '@/lib/stripe/config'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/bookings/create-payment-intent
  * Create Stripe PaymentIntent with promo code and/or gift card applied

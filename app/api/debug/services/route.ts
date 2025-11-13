@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { serviceRepository } from '@/lib/repositories/service-repository'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Test categories

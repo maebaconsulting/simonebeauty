@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendBookingCancellationSMS } from '@/lib/twilio/sms-service'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/client/bookings/[id]
  * Fetch a specific booking detail
