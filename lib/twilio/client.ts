@@ -33,7 +33,7 @@ function getTwilioClient(): ReturnType<typeof twilio> | null {
  * Uses lazy initialization to avoid build-time errors
  * Returns null if credentials are not configured
  */
-export const twilioClient = new Proxy({} as ReturnType<typeof twilio> | null, {
+export const twilioClient = new Proxy({} as ReturnType<typeof twilio>, {
   get: (_target, prop) => {
     const instance = getTwilioClient();
     if (instance === null) {
