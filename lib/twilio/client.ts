@@ -1,24 +1,54 @@
 import twilio from 'twilio';
 
-// Twilio credentials - must be set in environment variables
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+let twilioClientInstance: ReturnType<typeof twilio> | null = null;
 
-if (!accountSid || !authToken) {
-  console.warn('⚠️  Twilio credentials not configured. SMS functionality will be disabled.');
+/**
+ * Get Twilio client instance - Server-side only
+ * Lazy initialization to avoid build-time errors
+ */
+function getTwilioClient(): ReturnType<typeof twilio> | null {
+  if (twilioClientInstance !== null) {
+    return twilioClientInstance;
+  }
+
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  // Validate that credentials are proper Twilio credentials (not placeholders)
+  const isValidAccountSid = accountSid && accountSid.startsWith('AC');
+  const isValidAuthToken = authToken && authToken.length > 20;
+
+  if (!isValidAccountSid || !isValidAuthToken) {
+    console.warn('⚠️  Twilio credentials not configured. SMS functionality will be disabled.');
+    twilioClientInstance = null;
+    return null;
+  }
+
+  twilioClientInstance = twilio(accountSid, authToken);
+  return twilioClientInstance;
 }
 
-// Initialize Twilio client (only if credentials are available)
-export const twilioClient = accountSid && authToken
-  ? twilio(accountSid, authToken)
-  : null;
+/**
+ * Twilio client - Server-side only
+ * Uses lazy initialization to avoid build-time errors
+ * Returns null if credentials are not configured
+ */
+export const twilioClient = new Proxy({} as ReturnType<typeof twilio> | null, {
+  get: (_target, prop) => {
+    const instance = getTwilioClient();
+    if (instance === null) {
+      return null;
+    }
+    const value = instance[prop as keyof ReturnType<typeof twilio>];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+}) as ReturnType<typeof twilio> | null;
 
-// Export configuration
-export const twilioConfig = {
-  accountSid,
-  phoneNumber: twilioPhoneNumber,
-};
+// Export configuration getter
+export const getTwilioConfig = () => ({
+  accountSid: process.env.TWILIO_ACCOUNT_SID,
+  phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+});
 
 /**
  * Validate phone number format
