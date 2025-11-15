@@ -1,0 +1,27 @@
+echo "🔒 Running pre-commit security checks..."
+
+# Type check
+echo "\n📘 Type checking..."
+pnpm exec tsc --noEmit || exit 1
+
+# Lint
+echo "\n🔍 Linting..."
+pnpm run lint || exit 1
+
+# Validate API routes
+echo "\n🛣️  Validating API routes..."
+pnpm run validate:api-routes || exit 1
+
+# Validate Suspense boundaries
+echo "\n⏸️  Validating Suspense boundaries..."
+pnpm run validate:suspense || exit 1
+
+# Validate lazy initialization
+echo "\n⚡ Validating lazy initialization..."
+pnpm run validate:lazy-init || exit 1
+
+# Detect hardcoded secrets
+echo "\n🔐 Detecting hardcoded secrets..."
+pnpm run validate:secrets || exit 1
+
+echo "\n✅ All pre-commit checks passed!\n"
