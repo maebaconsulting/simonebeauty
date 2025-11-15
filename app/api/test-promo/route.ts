@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Test endpoint for promo code validation
  * GET /api/test-promo?code=WELCOME20&service_id=1&amount=5000

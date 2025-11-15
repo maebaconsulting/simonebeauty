@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-dynamic'
 /**
  * API Route: Service Contractors Management
  * Feature: Service Contractors Association

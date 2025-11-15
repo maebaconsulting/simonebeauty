@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, User, Star, MapPin, CheckCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -36,7 +36,7 @@ interface AssignmentResponse {
   }
 }
 
-export default function ContractorSelectionPage() {
+function ContractorSelectionContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -412,5 +412,20 @@ function ContractorCard({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+export default function ContractorSelectionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-button-primary animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <ContractorSelectionContent />
+    </Suspense>
   )
 }

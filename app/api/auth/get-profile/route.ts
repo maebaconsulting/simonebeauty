@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-dynamic'
 // API Route: Get Profile
 // Fetches user profile using service role to bypass RLS issues
 

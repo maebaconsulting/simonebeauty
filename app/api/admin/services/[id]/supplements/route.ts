@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-dynamic'
 /**
  * API Route: Service Supplements Management
  * Feature: Service Supplements

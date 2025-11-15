@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle, Tag, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,7 @@ interface GiftCardState {
   remainingBalance: number
 }
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { service, address, previousStep, reset } = useBookingStore()
@@ -495,5 +495,20 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-button-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmationContent />
+    </Suspense>
   )
 }

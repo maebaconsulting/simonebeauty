@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+
+export const dynamic = 'force-dynamic'
 /**
  * GET /api/client/bookings
  * Fetch all bookings for the authenticated client

@@ -1,4 +1,4 @@
-import { twilioClient, twilioConfig, formatPhoneNumber, isValidPhoneNumber } from './client';
+import { twilioClient, getTwilioConfig, formatPhoneNumber, isValidPhoneNumber } from './client';
 import { createClient } from '@/lib/supabase/server';
 
 export interface SMSResult {
@@ -32,8 +32,11 @@ export async function sendSMS(
       };
     }
 
+    // Get Twilio configuration
+    const config = getTwilioConfig();
+
     // Validate Twilio phone number is configured
-    if (!twilioConfig.phoneNumber) {
+    if (!config.phoneNumber) {
       console.error('TWILIO_PHONE_NUMBER not configured');
       return {
         success: false,
@@ -46,7 +49,7 @@ export async function sendSMS(
     // Send SMS via Twilio
     const result = await twilioClient.messages.create({
       body: message,
-      from: twilioConfig.phoneNumber,
+      from: config.phoneNumber,
       to: formattedTo,
     });
 
