@@ -2,106 +2,54 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * Rate limiting storage (in-memory, suitable for development/MVP)
- * For production with multiple instances, use Redis or similar
+ * Supported locales - must match i18n/config.ts
  */
-const rateLimitMap = new Map<
-  string,
-  { count: number; resetAt: number; attempts: Map<string, number> }
->()
+const locales = ['fr', 'en', 'es', 'de', 'nl', 'it'] as const
+type Locale = (typeof locales)[number]
+const defaultLocale: Locale = 'fr'
 
 /**
- * Rate limiting configuration
+ * Detect user's preferred locale from cookie or Accept-Language header
  */
-const RATE_LIMIT_CONFIG = {
-  LOGIN_MAX_ATTEMPTS: 5, // Maximum login attempts
-  LOGIN_WINDOW: 15 * 60 * 1000, // 15 minutes
-  GENERAL_MAX_REQUESTS: 100, // General rate limit
-  GENERAL_WINDOW: 60 * 1000, // 1 minute
-}
+function getLocale(request: NextRequest): Locale {
+  // 1. Check if user has manually selected a locale (stored in cookie)
+  const localeCookie = request.cookies.get('NEXT_LOCALE')?.value
+  if (localeCookie && locales.includes(localeCookie as Locale)) {
+    return localeCookie as Locale
+  }
 
-/**
- * Clean up expired rate limit entries
- */
-function cleanupRateLimits() {
-  const now = Date.now()
-  for (const [key, value] of rateLimitMap.entries()) {
-    if (now > value.resetAt) {
-      rateLimitMap.delete(key)
+  // 2. Check Accept-Language header
+  const acceptLanguage = request.headers.get('accept-language')
+  if (acceptLanguage) {
+    const preferredLocale = acceptLanguage
+      .split(',')[0]
+      ?.split('-')[0]
+      ?.toLowerCase()
+
+    if (preferredLocale && locales.includes(preferredLocale as Locale)) {
+      return preferredLocale as Locale
     }
   }
-}
 
-/**
- * Check rate limit for a given IP and path
- */
-function checkRateLimit(
-  ip: string,
-  path: string,
-  maxAttempts: number,
-  windowMs: number
-): boolean {
-  cleanupRateLimits()
-
-  const key = `${ip}:${path}`
-  const now = Date.now()
-  const limit = rateLimitMap.get(key)
-
-  if (limit && now < limit.resetAt) {
-    if (limit.count >= maxAttempts) {
-      return false // Rate limit exceeded
-    }
-    limit.count++
-    return true
-  } else {
-    // Create new rate limit entry
-    rateLimitMap.set(key, {
-      count: 1,
-      resetAt: now + windowMs,
-      attempts: new Map(),
-    })
-    return true
-  }
+  // 3. Fallback to default locale
+  return defaultLocale
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
 
-  // ============================================================================
-  // RATE LIMITING
-  // ============================================================================
+  // Detect user's preferred locale
+  const locale = getLocale(request)
 
-  // Apply stricter rate limiting to auth endpoints
-  if (pathname.startsWith('/auth/') || pathname.startsWith('/api/auth/')) {
-    const allowed = checkRateLimit(
-      ip,
-      pathname,
-      RATE_LIMIT_CONFIG.LOGIN_MAX_ATTEMPTS,
-      RATE_LIMIT_CONFIG.LOGIN_WINDOW
-    )
-
-    if (!allowed) {
-      return NextResponse.json(
-        {
-          error: 'Trop de tentatives. Veuillez réessayer dans 15 minutes.',
-          type: 'rate_limit_exceeded',
-        },
-        { status: 429 }
-      )
-    }
-  }
-
-  // ============================================================================
-  // AUTH SESSION REFRESH
-  // ============================================================================
-
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  // Create response with locale cookie
+  let response = NextResponse.next({ request })
+  response.cookies.set('NEXT_LOCALE', locale, {
+    path: '/',
+    maxAge: 31536000, // 1 year
+    sameSite: 'lax',
   })
 
+  // Create Supabase client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -111,59 +59,27 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
   )
 
-  // Refresh session if exists
-  await supabase.auth.getSession()
-
-  // ============================================================================
-  // PROTECTED ROUTES
-  // ============================================================================
-
+  // Get user session
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Define protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/profile', '/bookings']
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
+  // Define route types
+  const protectedRoutes = ['/dashboard', '/profile', '/bookings', '/admin', '/contractor', '/client']
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isContractorRoute = pathname.startsWith('/contractor')
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup')
+  const isHomepage = pathname === '/'
 
   // Redirect to login if accessing protected route without auth
   if (isProtectedRoute && !user) {
@@ -172,12 +88,67 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to dashboard if accessing auth pages while logged in
-  const authPages = ['/login', '/signup']
-  const isAuthPage = authPages.some((page) => pathname.startsWith(page))
+  // If user is authenticated and accessing auth pages, admin routes, contractor routes, or homepage
+  // we need to check their role - do ONE profile query
+  if (user && (isAuthPage || isAdminRoute || isContractorRoute || isHomepage)) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-  if (isAuthPage && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const role = profile?.role
+
+    // Admin route protection
+    if (isAdminRoute && role !== 'admin' && role !== 'manager') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Contractor route protection
+    if (isContractorRoute && role !== 'contractor') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Redirect authenticated users away from auth pages
+    if (isAuthPage) {
+      if (role === 'admin' || role === 'manager') {
+        return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (role === 'contractor') {
+        return NextResponse.redirect(new URL('/contractor/dashboard', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/client', request.url))
+      }
+    }
+
+    // Homepage redirect for authenticated users
+    if (isHomepage) {
+      if (role === 'admin' || role === 'manager') {
+        return NextResponse.redirect(new URL('/admin', request.url))
+      } else if (role === 'contractor') {
+        return NextResponse.redirect(new URL('/contractor/dashboard', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/client', request.url))
+      }
+    }
+
+    // Contractor onboarding check (only if accessing contractor routes)
+    if (isContractorRoute && role === 'contractor') {
+      const { data: onboardingStatus } = await supabase
+        .from('contractor_onboarding_status')
+        .select('is_completed')
+        .eq('contractor_id', user.id)
+        .single()
+
+      const isOnboardingPage = pathname.startsWith('/contractor/onboarding')
+
+      if (onboardingStatus && !onboardingStatus.is_completed && !isOnboardingPage) {
+        return NextResponse.redirect(new URL('/contractor/onboarding', request.url))
+      }
+
+      if (onboardingStatus && onboardingStatus.is_completed && isOnboardingPage) {
+        return NextResponse.redirect(new URL('/contractor/dashboard', request.url))
+      }
+    }
   }
 
   return response

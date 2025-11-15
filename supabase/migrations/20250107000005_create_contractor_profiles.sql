@@ -1,19 +1,15 @@
--- Migration: 20250107000005_create_contractor_profiles.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor profiles table and junction table for specialties with indexes and RLS
--- Date: 2025-11-07
+-- Migration: Create contractor_profiles table
+-- Feature: 007-contractor-interface
+-- Description: Profils professionnels publics des prestataires visibles par les clients
 
 CREATE TABLE contractor_profiles (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID UNIQUE NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT UNIQUE NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Informations publiques
   bio TEXT,
   professional_title VARCHAR(200), -- Ex: "Masseuse professionnelle certifiée"
   years_of_experience INT CHECK (years_of_experience >= 0),
-
-  -- Spécialités (many-to-many via junction table contractor_profile_specialties)
-  -- Handled separately
 
   -- Portfolio
   portfolio_image_paths TEXT[], -- Paths in Supabase Storage
@@ -64,7 +60,9 @@ CREATE POLICY "Contractors can update own profile"
 ON contractor_profiles FOR UPDATE
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can manage all profiles"
@@ -104,6 +102,7 @@ TO authenticated
 USING (
   contractor_profile_id IN (
     SELECT cp.id FROM contractor_profiles cp
-    WHERE cp.contractor_id = auth.uid()
+    JOIN contractors c ON c.id = cp.contractor_id
+    WHERE c.profile_uuid = auth.uid()
   )
 );

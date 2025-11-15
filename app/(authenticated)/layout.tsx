@@ -1,19 +1,21 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
+import { useUser } from '@/hooks/useUser'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { SessionMonitor } from '@/components/auth/SessionMonitor'
+import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import { Sparkles } from 'lucide-react'
 
 export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading, signOut } = useAuth()
+  const { user, isLoading } = useUser()
   const router = useRouter()
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Chargement...</p>
@@ -22,35 +24,44 @@ export default function AuthenticatedLayout({
   }
 
   if (!user) {
-    router.push('/login')
+    router.push('/')
     return null
   }
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push('/login')
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/')
+    router.refresh() // Force refresh to clear cached data
   }
 
   return (
     <div className="min-h-screen">
-      {/* Header with logout button */}
-      <header className="border-b bg-white">
+      {/* Header with booking and logout buttons */}
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto flex items-center justify-between p-4">
-          <div>
-            <h1 className="text-xl font-semibold">Simone Paris</h1>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
+          <Link href="/client">
+            <div className="cursor-pointer hover:opacity-80 transition-opacity">
+              <h1 className="text-xl font-semibold">Simone Paris</h1>
+              <p className="text-sm text-gray-600">{user.email}</p>
+            </div>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/booking/services">
+              <Button className="bg-gradient-to-r from-button-primary to-purple-600 hover:from-purple-700 hover:to-purple-800 text-white font-semibold shadow-md">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Réserver un service
+              </Button>
+            </Link>
+            <Button onClick={handleSignOut} variant="outline">
+              Se déconnecter
+            </Button>
           </div>
-          <Button onClick={handleSignOut} variant="outline" size="sm">
-            Se déconnecter
-          </Button>
         </div>
       </header>
 
       {/* Main content */}
       <main>{children}</main>
-
-      {/* Session monitor */}
-      <SessionMonitor />
     </div>
   )
 }

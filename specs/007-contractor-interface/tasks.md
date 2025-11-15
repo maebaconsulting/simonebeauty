@@ -20,32 +20,32 @@ Tasks are organized by user story priority, with foundational work completing fi
 
 ### Database Setup
 
-- [ ] [T001] [P0] [INFRA] Create migration 20250107000000_create_specialties.sql with table definition, indexes, RLS policies, and seed data from data-model.md lines 24-79 → `supabase/migrations/`
-- [ ] [T002] [P0] [INFRA] Create migration 20250107000001_create_contractor_applications.sql with table definition, indexes, RLS policies, and validation trigger from data-model.md lines 84-198 → `supabase/migrations/`
-- [ ] [T003] [P0] [INFRA] Create migration 20250107000002_create_contractor_onboarding_status.sql with table, computed columns, indexes, RLS, and completion trigger from data-model.md lines 202-290 → `supabase/migrations/`
-- [ ] [T004] [P0] [INFRA] Create migration 20250107000003_create_contractor_schedules.sql with table, indexes, RLS, and unique constraint from data-model.md lines 294-364 → `supabase/migrations/`
-- [ ] [T005] [P0] [INFRA] Create migration 20250107000004_create_contractor_unavailabilities.sql with table, indexes, RLS policies from data-model.md lines 368-432 → `supabase/migrations/`
-- [ ] [T006] [P0] [INFRA] Create migration 20250107000005_create_contractor_profiles.sql with table, junction table contractor_profile_specialties, indexes, RLS from data-model.md lines 510-622 → `supabase/migrations/`
-- [ ] [T007] [P0] [INFRA] Create migration 20250107000006_create_contractor_services.sql with table, indexes, RLS policies from data-model.md lines 840-903 → `supabase/migrations/`
-- [ ] [T008] [P0] [INFRA] Create migration 20250107000007_create_contractor_slug_history.sql with table, indexes, RLS, unique constraint from data-model.md lines 626-685 → `supabase/migrations/`
-- [ ] [T009] [P0] [INFRA] Create migration 20250107000008_create_contractor_slug_analytics.sql with table, indexes, RLS, and aggregated view contractor_slug_stats from data-model.md lines 689-776 → `supabase/migrations/`
-- [ ] [T010] [P0] [INFRA] Create migration 20250107000009_create_platform_config.sql with table, RLS, and seed data (forbidden_slugs, commission_default, slug_change_limit) from data-model.md lines 780-836 → `supabase/migrations/`
-- [ ] [T011] [P0] [INFRA] Create migration 20250107000010_create_booking_requests.sql with table, indexes, RLS policies from data-model.md lines 436-506 → `supabase/migrations/`
-- [ ] [T012] [P0] [INFRA] Create migration 20250107000011_create_service_action_logs.sql with table, indexes, RLS policies from data-model.md lines 1072-1127 → `supabase/migrations/`
-- [ ] [T013] [P0] [INFRA] Create migration 20250107000012_extend_contractors_table.sql with ALTER TABLE statements adding slug columns, commission settings, Stripe Connect fields, indexes, and triggers (generate_contractor_slug, check_slug_change_limit) from data-model.md lines 907-1038 → `supabase/migrations/`
-- [ ] [T014] [P0] [INFRA] Create migration 20250107000013_extend_bookings_table.sql with ALTER TABLE statements adding tip columns, stripe_fee_service, and updated status CHECK constraint from data-model.md lines 1042-1067 → `supabase/migrations/`
-- [ ] [T015] [P0] [INFRA] Create migration 20250107000014_create_financial_views.sql with contractor_financial_summary and contractor_transaction_details views including GRANT and RLS policies from data-model.md lines 1157-1264 → `supabase/migrations/`
+- [X] [T001] [P0] [INFRA] Create migration 20250107000000_create_specialties.sql with table definition, indexes, RLS policies, and seed data from data-model.md lines 24-79 → `supabase/migrations/`
+- [X] [T002] [P0] [INFRA] Create migration 20250107000001_create_contractor_applications.sql with table definition, indexes, RLS policies, and validation trigger from data-model.md lines 84-198 → `supabase/migrations/`
+- [X] [T003] [P0] [INFRA] Create migration 20250107000002_create_contractor_onboarding_status.sql with table, computed columns, indexes, RLS, and completion trigger from data-model.md lines 202-290 → `supabase/migrations/`
+- [X] [T004] [P0] [INFRA] Create migration 20250107000003_create_contractor_schedules.sql with table, indexes, RLS, and unique constraint from data-model.md lines 294-364 → `supabase/migrations/`
+- [X] [T005] [P0] [INFRA] Create migration 20250107000004_create_contractor_unavailabilities.sql with table, indexes, RLS policies from data-model.md lines 368-432 → `supabase/migrations/`
+- [X] [T006] [P0] [INFRA] Create migration 20250107000005_create_contractor_profiles.sql with table, junction table contractor_profile_specialties, indexes, RLS from data-model.md lines 510-622 → `supabase/migrations/`
+- [X] [T007] [P0] [INFRA] Create migration 20250107000006_create_contractor_services.sql with table, indexes, RLS policies from data-model.md lines 840-903 → `supabase/migrations/`
+- [X] [T008] [P0] [INFRA] Create migration 20250107000007_create_contractor_slug_history.sql with table, indexes, RLS, unique constraint from data-model.md lines 626-685 → `supabase/migrations/`
+- [X] [T009] [P0] [INFRA] Create migration 20250107000008_create_contractor_slug_analytics.sql with table, indexes, RLS, and aggregated view contractor_slug_stats from data-model.md lines 689-776 → `supabase/migrations/`
+- [X] [T010] [P0] [INFRA] Create migration 20250107000009_create_platform_config.sql with table, RLS, and seed data (forbidden_slugs, commission_default, slug_change_limit) from data-model.md lines 780-836 → `supabase/migrations/`
+- [X] [T011] [P0] [INFRA] Create migration 20250107000010_create_booking_requests.sql with table, indexes, RLS policies from data-model.md lines 436-506 → `supabase/migrations/`
+- [X] [T012] [P0] [INFRA] Create migration 20250107000011_create_service_action_logs.sql with table, indexes, RLS policies from data-model.md lines 1072-1127 → `supabase/migrations/`
+- [X] [T013] [P0] [INFRA] Create migration 20250107000012_extend_contractors_table.sql with ALTER TABLE statements adding slug columns, commission settings, Stripe Connect fields, indexes, and triggers (generate_contractor_slug, check_slug_change_limit) from data-model.md lines 907-1038 → `supabase/migrations/`
+- [X] [T014] [P0] [INFRA] Create migration 20250107000013_extend_bookings_table.sql with ALTER TABLE statements adding tip columns, stripe_fee_service, and updated status CHECK constraint from data-model.md lines 1042-1067 → `supabase/migrations/`
+- [X] [T015] [P0] [INFRA] Create migration 20250107000014_create_financial_views.sql with contractor_financial_summary and contractor_transaction_details views including GRANT and RLS policies from data-model.md lines 1157-1264 → `supabase/migrations/`
 
 ### Supabase Storage Setup
 
-- [ ] [T016] [P0] [US0] Create Supabase Storage bucket "job-applications" with subdirectories (cv/, certifications/, portfolio/) and RLS policies for authenticated upload and admin read from research.md lines 172-194 → Execute via Supabase Dashboard or CLI
-- [ ] [T017] [P0] [US4] Create Supabase Storage bucket "contractor-portfolios" with RLS policies for public read and contractor write → Execute via Supabase Dashboard or CLI
+- [X] [T016] [P0] [US0] Create Supabase Storage bucket "job-applications" with subdirectories (cv/, certifications/, portfolio/) and RLS policies for authenticated upload and admin read from research.md lines 172-194 → Execute via Supabase Dashboard or CLI
+- [X] [T017] [P0] [US4] Create Supabase Storage bucket "contractor-portfolios" with RLS policies for public read and contractor write → Execute via Supabase Dashboard or CLI
 
 ### Environment Configuration
 
-- [ ] [T018] [P0] [INFRA] Add Stripe Connect environment variables (STRIPE_SECRET_KEY, STRIPE_CONNECT_CLIENT_ID, STRIPE_WEBHOOK_SECRET) to .env.local and document in quickstart.md → `.env.local`
-- [ ] [T019] [P0] [INFRA] Add frontend URL environment variable (NEXT_PUBLIC_SITE_URL) for Stripe Connect redirects → `.env.local`
-- [ ] [T020] [P0] [INFRA] Configure Resend API key (RESEND_API_KEY) for email notifications → `.env.local`
+- [X] [T018] [P0] [INFRA] Add Stripe Connect environment variables (STRIPE_SECRET_KEY, STRIPE_CONNECT_CLIENT_ID, STRIPE_WEBHOOK_SECRET) to .env.local and document in quickstart.md → `.env.local`
+- [X] [T019] [P0] [INFRA] Add frontend URL environment variable (NEXT_PUBLIC_SITE_URL) for Stripe Connect redirects → `.env.local`
+- [X] [T020] [P0] [INFRA] Configure Resend API key (RESEND_API_KEY) for email notifications → `.env.local`
 
 ---
 
@@ -53,40 +53,40 @@ Tasks are organized by user story priority, with foundational work completing fi
 
 ### Public Job Application Form (FR-000 to FR-021)
 
-- [ ] [T021] [P1] [US0] Create public job application page at app/rejoindre-simone/page.tsx with layout and SEO metadata → `app/rejoindre-simone/page.tsx`
-- [ ] [T022] [P1] [US0] Create Zod validation schemas for all 5 form steps (PersonalInfoSchema, ProfessionalProfileSchema, AvailabilitySchema, MotivationSchema, DocumentsSchema) from research.md lines 196-207 → `lib/validations/contractor-application.ts`
-- [ ] [T023] [P1] [US0] Build multi-step form state machine hook useMultiStepForm with step navigation, form persistence, and progress tracking from research.md lines 45-79 → `lib/hooks/useMultiStepForm.ts`
-- [ ] [T024] [P1] [US0] Create ApplicationForm component with circular progress indicator (pills 1-5) and step navigation buttons → `components/contractor/ApplicationForm/ApplicationForm.tsx`
-- [ ] [T025] [P1] [US0] Build Step 1: Personal Info form (first_name, last_name, email, phone, address) with React Hook Form + Zod validation → `components/contractor/ApplicationForm/Step1PersonalInfo.tsx`
-- [ ] [T026] [P1] [US0] Build Step 2: Professional Profile form with dynamic specialty selection (watch profession field, filter specialties from database) from research.md lines 88-101 → `components/contractor/ApplicationForm/Step2ProfessionalProfile.tsx`
-- [ ] [T027] [P1] [US0] Build Step 3: Availability form (geographic zones multi-select, preferred schedule, work frequency radio) → `components/contractor/ApplicationForm/Step3Availability.tsx`
-- [ ] [T028] [P1] [US0] Build Step 4: Motivation form with textarea (min 100 chars validation) and character counter → `components/contractor/ApplicationForm/Step4Motivation.tsx`
-- [ ] [T029] [P1] [US0] Build Step 5: Documents upload form with file input, validation (types, size 5MB), and upload to Supabase Storage using utility from research.md lines 136-167 → `components/contractor/ApplicationForm/Step5Documents.tsx`
-- [ ] [T030] [P1] [US0] Create file upload utility uploadFile(file, category) with client-side validation and Supabase Storage integration from research.md lines 136-167 → `lib/supabase/storage-utils.ts`
-- [ ] [T031] [P1] [US0] Create Edge Function submit-job-application.ts handling form submission, file path storage, backoffice task creation, and email notifications (candidate + admin) per FR-007 to FR-011 from job-application.yaml → `supabase/functions/submit-job-application/index.ts`
-- [ ] [T032] [P1] [US0] Add form submission success page with confirmation message and next steps explanation → `app/rejoindre-simone/success/page.tsx`
+- [X] [T021] [P1] [US0] Create public job application page at app/rejoindre-simone/page.tsx with layout and SEO metadata → `app/rejoindre-simone/page.tsx`
+- [X] [T022] [P1] [US0] Create Zod validation schemas for all 5 form steps (PersonalInfoSchema with contractor_type + split address fields, ProfessionalProfileSchema, AvailabilitySchema with calendar dates, MotivationSchema optional, DocumentsSchema) from research.md lines 196-207 → `lib/validations/contractor-application.ts`
+- [X] [T023] [P1] [US0] Build multi-step form state machine hook useMultiStepForm with step navigation, form persistence, and progress tracking from research.md lines 45-79 → `lib/hooks/useMultiStepForm.ts`
+- [X] [T024] [P1] [US0] Create ApplicationForm component with circular progress indicator (pills 1-5) and step navigation buttons → `components/contractor/ApplicationForm/ApplicationForm.tsx`
+- [X] [T025] [P1] [US0] Build Step 1: Personal Info form (first_name, last_name, email, phone, contractor_type radio société/personnel, split address: street_address, city, postal_code, country select) with React Hook Form + Zod validation → `components/contractor/ApplicationForm/Step1PersonalInfo.tsx`
+- [X] [T026] [P1] [US0] Build Step 2: Professional Profile form with dynamic specialty selection (watch profession field, filter specialties from database) from research.md lines 88-101 → `components/contractor/ApplicationForm/Step2ProfessionalProfile.tsx`
+- [X] [T027] [P1] [US0] Build Step 3: Availability form (geographic zones multi-select, calendar-based date picker for available_dates, work frequency radio) → `components/contractor/ApplicationForm/Step3Availability.tsx`
+- [X] [T028] [P1] [US0] Build Step 4: Motivation form with OPTIONAL textarea (min 100 chars validation if provided) and character counter → `components/contractor/ApplicationForm/Step4Motivation.tsx`
+- [X] [T029] [P1] [US0] Build Step 5: Documents upload form with file input, validation (types, size 5MB), and upload to Supabase Storage using utility from research.md lines 136-167 → `components/contractor/ApplicationForm/Step5Documents.tsx`
+- [X] [T030] [P1] [US0] Create file upload utility uploadFile(file, category) with client-side validation and Supabase Storage integration from research.md lines 136-167 → `lib/supabase/storage-utils.ts`
+- [X] [T031] [P1] [US0] Create Edge Function submit-job-application.ts handling form submission, file path storage, backoffice task creation, and email notifications (candidate + admin) per FR-007 to FR-011 from job-application.yaml → `supabase/functions/submit-job-application/index.ts`
+- [X] [T032] [P1] [US0] Add form submission success page with confirmation message and next steps explanation → `app/rejoindre-simone/success/page.tsx`
 
 ### Admin Job Application Review (FR-012 to FR-021)
 
-- [ ] [T033] [P1] [US0] Create admin applications list page at app/admin/contractors/applications/page.tsx with status filters (pending, interview_scheduled, approved, rejected) → `app/admin/contractors/applications/page.tsx`
-- [ ] [T034] [P1] [US0] Build ApplicationCard component displaying candidate info, documents, and action buttons (view details, schedule interview, approve, reject) → `components/admin/ApplicationCard.tsx`
-- [ ] [T035] [P1] [US0] Create admin application detail page at app/admin/contractors/applications/[id]/page.tsx with full candidate profile, document viewer, and comment section → `app/admin/contractors/applications/[id]/page.tsx`
-- [ ] [T036] [P1] [US0] Build interview scheduling modal with date/time picker and mode selection (video, phone, in_person) → `components/admin/ScheduleInterviewModal.tsx`
-- [ ] [T037] [P1] [US0] Create Edge Function schedule-interview.ts updating application status, sending calendar invite (ICS) to candidate per FR-016 from job-application.yaml → `supabase/functions/schedule-interview/index.ts`
-- [ ] [T038] [P1] [US0] Build approval modal with contractor account creation form (generates slug, creates auth.users entry, sends credentials email) → `components/admin/ApproveApplicationModal.tsx`
-- [ ] [T039] [P1] [US0] Create Edge Function approve-contractor-application.ts handling account creation, contractor_onboarding_status initialization, temp password email per FR-017-018 from contractor-onboarding.yaml → `supabase/functions/approve-contractor-application/index.ts`
-- [ ] [T040] [P1] [US0] Build rejection modal with required reason textarea (min 10 chars) → `components/admin/RejectApplicationModal.tsx`
-- [ ] [T041] [P1] [US0] Create Edge Function reject-application.ts updating status, archiving, and sending rejection email with reason per FR-019-020 from job-application.yaml → `supabase/functions/reject-application/index.ts`
+- [X] [T033] [P1] [US0] Create admin applications list page at app/admin/contractors/applications/page.tsx with status filters (pending, interview_scheduled, approved, rejected) → `app/admin/contractors/applications/page.tsx`
+- [X] [T034] [P1] [US0] Build ApplicationCard component displaying candidate info, documents, and action buttons (view details, schedule interview, approve, reject) → `components/admin/ApplicationCard.tsx`
+- [X] [T035] [P1] [US0] Create admin application detail page at app/admin/contractors/applications/[id]/page.tsx with full candidate profile, document viewer, and comment section → `app/admin/contractors/applications/[id]/page.tsx`
+- [X] [T036] [P1] [US0] Build interview scheduling modal with date/time picker and mode selection (video, phone, in_person) → `components/admin/ScheduleInterviewModal.tsx`
+- [X] [T037] [P1] [US0] Create Edge Function schedule-interview.ts updating application status, sending calendar invite (ICS) to candidate per FR-016 from job-application.yaml → `supabase/functions/schedule-interview/index.ts`
+- [X] [T038] [P1] [US0] Build approval modal with contractor account creation form (generates slug, creates auth.users entry, sends credentials email) → `components/admin/ApproveApplicationModal.tsx`
+- [X] [T039] [P1] [US0] Create Edge Function approve-contractor-application.ts handling account creation, contractor_onboarding_status initialization, temp password email per FR-017-018 from contractor-onboarding.yaml → `supabase/functions/approve-contractor-application/index.ts`
+- [X] [T040] [P1] [US0] Build rejection modal with required reason textarea (min 10 chars) → `components/admin/RejectApplicationModal.tsx`
+- [X] [T041] [P1] [US0] Create Edge Function reject-application.ts updating status, archiving, and sending rejection email with reason per FR-019-020 from job-application.yaml → `supabase/functions/reject-application/index.ts`
 
 ### Contractor Onboarding Flow (FR-021)
 
-- [ ] [T042] [P1] [US0] Create contractor first login detection middleware checking contractor_onboarding_status.is_completed, redirecting incomplete onboarding to /contractor/onboarding → `middleware.ts`
-- [ ] [T043] [P1] [US0] Create onboarding wizard page at app/contractor/onboarding/page.tsx with progress steps (1. Schedule, 2. Stripe, 3. Profile) → `app/contractor/onboarding/page.tsx`
-- [ ] [T044] [P1] [US0] Build OnboardingWizard component with step indicator and completion percentage from contractor_onboarding_status → `components/contractor/OnboardingWizard/OnboardingWizard.tsx`
-- [ ] [T045] [P1] [US0] Build onboarding Step 1: Schedule configuration form (redirect to /contractor/planning with "onboarding mode" flag) → `components/contractor/OnboardingWizard/Step1Schedule.tsx`
-- [ ] [T046] [P1] [US0] Build onboarding Step 2: Stripe Connect button with redirect to Stripe onboarding, handle return and refresh URLs per research.md lines 236-273 → `components/contractor/OnboardingWizard/Step2StripeConnect.tsx`
-- [ ] [T047] [P1] [US0] Build onboarding Step 3: Profile completion form (bio, professional_title, years_of_experience, specialty selection) → `components/contractor/OnboardingWizard/Step3Profile.tsx`
-- [ ] [T048] [P1] [US0] Create Edge Function update-onboarding-step.ts handling individual step completion and updating contractor_onboarding_status booleans from contractor-onboarding.yaml → `supabase/functions/update-onboarding-step/index.ts`
+- [X] [T042] [P1] [US0] Create contractor first login detection middleware checking contractor_onboarding_status.is_completed, redirecting incomplete onboarding to /contractor/onboarding → `middleware.ts`
+- [X] [T043] [P1] [US0] Create onboarding wizard page at app/contractor/onboarding/page.tsx with progress steps (1. Schedule, 2. Stripe, 3. Profile) → `app/contractor/onboarding/page.tsx`
+- [X] [T044] [P1] [US0] Build OnboardingWizard component with step indicator and completion percentage from contractor_onboarding_status → `components/contractor/OnboardingWizard/OnboardingWizard.tsx`
+- [X] [T045] [P1] [US0] Build onboarding Step 1: Schedule configuration form (redirect to /contractor/planning with "onboarding mode" flag) → `components/contractor/OnboardingWizard/Step1Schedule.tsx`
+- [X] [T046] [P1] [US0] Build onboarding Step 2: Stripe Connect button with redirect to Stripe onboarding, handle return and refresh URLs per research.md lines 236-273 → `components/contractor/OnboardingWizard/Step2StripeConnect.tsx`
+- [X] [T047] [P1] [US0] Build onboarding Step 3: Profile completion form (bio, professional_title, years_of_experience, specialty selection) → `components/contractor/OnboardingWizard/Step3Profile.tsx`
+- [X] [T048] [P1] [US0] Create Edge Function update-onboarding-step.ts handling individual step completion and updating contractor_onboarding_status booleans from contractor-onboarding.yaml → `supabase/functions/update-onboarding-step/index.ts`
 
 ---
 
@@ -94,30 +94,30 @@ Tasks are organized by user story priority, with foundational work completing fi
 
 ### Schedule Configuration (FR-022)
 
-- [ ] [T049] [P1] [US1] Create contractor planning page at app/contractor/planning/page.tsx with weekly calendar view → `app/contractor/planning/page.tsx`
-- [ ] [T050] [P1] [US1] Build ScheduleEditor component with day-of-week grid (Monday-Sunday), time range inputs (start_time, end_time) per day from data-model.md lines 294-364 → `components/contractor/ScheduleEditor/ScheduleEditor.tsx`
-- [ ] [T051] [P1] [US1] Create schedule validation logic preventing overlapping time ranges for same day → `lib/validations/schedule-validation.ts`
-- [ ] [T052] [P1] [US1] Build TimeRangeInput component with time picker (9:00-18:00 format), validation (start < end) → `components/contractor/ScheduleEditor/TimeRangeInput.tsx`
-- [ ] [T053] [P1] [US1] Create Edge Function create-schedule-entry.ts handling contractor_schedules INSERT with validation per contractor-schedule.yaml → `supabase/functions/create-schedule-entry/index.ts`
-- [ ] [T054] [P1] [US1] Create Edge Function update-schedule-entry.ts handling contractor_schedules UPDATE per contractor-schedule.yaml → `supabase/functions/update-schedule-entry/index.ts`
-- [ ] [T055] [P1] [US1] Create Edge Function delete-schedule-entry.ts handling contractor_schedules soft delete (is_active = false) per contractor-schedule.yaml → `supabase/functions/delete-schedule-entry/index.ts`
-- [ ] [T056] [P1] [US1] Create Edge Function get-contractor-schedule.ts returning weekly schedule for contractor per contractor-schedule.yaml → `supabase/functions/get-contractor-schedule/index.ts`
+- [X] [T049] [P1] [US1] Create contractor planning page at app/contractor/planning/page.tsx with weekly calendar view → `app/contractor/planning/page.tsx`
+- [X] [T050] [P1] [US1] Build ScheduleEditor component with day-of-week grid (Monday-Sunday), time range inputs (start_time, end_time) per day from data-model.md lines 294-364 → `components/contractor/ScheduleEditor/ScheduleEditor.tsx`
+- [X] [T051] [P1] [US1] Create schedule validation logic preventing overlapping time ranges for same day → `lib/validations/schedule-validation.ts`
+- [X] [T052] [P1] [US1] Build TimeRangeInput component with time picker (9:00-18:00 format), validation (start < end) → `components/contractor/ScheduleEditor/TimeRangeInput.tsx`
+- [X] [T053] [P1] [US1] Create Edge Function create-schedule-entry.ts handling contractor_schedules INSERT with validation per contractor-schedule.yaml → `supabase/functions/create-schedule-entry/index.ts`
+- [X] [T054] [P1] [US1] Create Edge Function update-schedule-entry.ts handling contractor_schedules UPDATE per contractor-schedule.yaml → `supabase/functions/update-schedule-entry/index.ts`
+- [X] [T055] [P1] [US1] Create Edge Function delete-schedule-entry.ts handling contractor_schedules soft delete (is_active = false) per contractor-schedule.yaml → `supabase/functions/delete-schedule-entry/index.ts`
+- [X] [T056] [P1] [US1] Create Edge Function get-contractor-schedule.ts returning weekly schedule for contractor per contractor-schedule.yaml → `supabase/functions/get-contractor-schedule/index.ts`
 
 ### Unavailability Management (FR-022, FR-023)
 
-- [ ] [T057] [P1] [US1] Build UnavailabilityManager component with list of blocked time slots and "Add" button → `components/contractor/UnavailabilityManager/UnavailabilityManager.tsx`
-- [ ] [T058] [P1] [US1] Create AddUnavailabilityModal with date range picker, time picker, reason dropdown (vacation, personal, lunch_break, sick, other), and optional recurrence → `components/contractor/AddUnavailabilityModal.tsx`
-- [ ] [T059] [P1] [US1] Create Edge Function create-unavailability.ts handling contractor_unavailabilities INSERT with date validation per contractor-schedule.yaml → `supabase/functions/create-unavailability/index.ts`
-- [ ] [T060] [P1] [US1] Create Edge Function delete-unavailability.ts handling contractor_unavailabilities DELETE per contractor-schedule.yaml → `supabase/functions/delete-unavailability/index.ts`
-- [ ] [T061] [P1] [US1] Create Edge Function get-contractor-unavailabilities.ts returning list with date range filter per contractor-schedule.yaml → `supabase/functions/get-contractor-unavailabilities/index.ts`
+- [X] [T057] [P1] [US1] Build UnavailabilityManager component with list of blocked time slots and "Add" button → `components/contractor/UnavailabilityManager/UnavailabilityManager.tsx`
+- [X] [T058] [P1] [US1] Create AddUnavailabilityModal with date range picker, time picker, reason dropdown (vacation, personal, lunch_break, sick, other), and optional recurrence → `components/contractor/AddUnavailabilityModal.tsx`
+- [X] [T059] [P1] [US1] Create Edge Function create-unavailability.ts handling contractor_unavailabilities INSERT with date validation per contractor-schedule.yaml → `supabase/functions/create-unavailability/index.ts`
+- [X] [T060] [P1] [US1] Create Edge Function delete-unavailability.ts handling contractor_unavailabilities DELETE per contractor-schedule.yaml → `supabase/functions/delete-unavailability/index.ts`
+- [X] [T061] [P1] [US1] Create Edge Function get-contractor-unavailabilities.ts returning list with date range filter per contractor-schedule.yaml → `supabase/functions/get-contractor-unavailabilities/index.ts`
 
 ### Planning Calendar View (FR-023, FR-024)
 
-- [ ] [T062] [P1] [US1] Build PlanningCalendar component with weekly view showing confirmed bookings and unavailabilities → `components/contractor/PlanningCalendar/PlanningCalendar.tsx`
-- [ ] [T063] [P1] [US1] Integrate Realtime subscription to appointment_bookings table for live updates when new bookings confirmed → `components/contractor/PlanningCalendar/usePlanningRealtime.ts`
-- [ ] [T064] [P1] [US1] Build BookingCard component for calendar displaying service name, client name, time, address, with color coding by status → `components/contractor/PlanningCalendar/BookingCard.tsx`
-- [ ] [T065] [P1] [US1] Create Edge Function get-weekly-planning.ts returning contractor schedule + bookings + unavailabilities + travel times for given week per contractor-schedule.yaml → `supabase/functions/get-weekly-planning/index.ts`
-- [ ] [T066] [P1] [US1] Implement travel time calculation using Google Distance Matrix API between consecutive bookings (FR-024) → `lib/google-maps/distance-matrix.ts`
+- [X] [T062] [P1] [US1] Build PlanningCalendar component with weekly view showing confirmed bookings and unavailabilities → `components/contractor/PlanningCalendar/PlanningCalendar.tsx`
+- [X] [T063] [P1] [US1] Integrate Realtime subscription to appointment_bookings table for live updates when new bookings confirmed → `components/contractor/PlanningCalendar/usePlanningRealtime.ts`
+- [X] [T064] [P1] [US1] Build BookingCard component for calendar displaying service name, client name, time, address, with color coding by status → `components/contractor/PlanningCalendar/BookingCard.tsx`
+- [X] [T065] [P1] [US1] Create Edge Function get-weekly-planning.ts returning contractor schedule + bookings + unavailabilities + travel times for given week per contractor-schedule.yaml → `supabase/functions/get-weekly-planning/index.ts`
+- [X] [T066] [P1] [US1] Implement travel time calculation using Google Distance Matrix API between consecutive bookings (FR-024) → `lib/google-maps/distance-matrix.ts`
 
 ---
 
@@ -125,29 +125,29 @@ Tasks are organized by user story priority, with foundational work completing fi
 
 ### Pending Booking Requests (FR-025 to FR-029)
 
-- [ ] [T067] [P1] [US2] Create contractor reservations page at app/contractor/reservations/page.tsx with tabs: "Pending Requests", "Upcoming", "Past" → `app/contractor/reservations/page.tsx`
-- [ ] [T068] [P1] [US2] Build BookingRequestCard component displaying client info, service details, date/time, address, price, with Accept/Refuse buttons → `components/contractor/BookingRequestCard.tsx`
-- [ ] [T069] [P1] [US2] Create Edge Function get-pending-requests.ts returning booking_requests with status='pending' and not expired per contractor-bookings.yaml → `supabase/functions/get-pending-requests/index.ts`
-- [ ] [T070] [P1] [US2] Build AcceptBookingModal with confirmation message and Stripe payment capture warning → `components/contractor/AcceptBookingModal.tsx`
-- [ ] [T071] [P1] [US2] Create Edge Function accept-booking-request.ts handling: 1) Update booking_requests.status='accepted', 2) Capture Stripe PaymentIntent, 3) Update appointment_bookings.status='confirmed', 4) Send confirmation email to client per FR-026-027 from contractor-bookings.yaml → `supabase/functions/accept-booking-request/index.ts`
-- [ ] [T072] [P1] [US2] Build RefuseBookingModal with required reason textarea and optional message to client → `components/contractor/RefuseBookingModal.tsx`
-- [ ] [T073] [P1] [US2] Create Edge Function refuse-booking-request.ts handling: 1) Update booking_requests.status='refused', 2) Cancel Stripe PaymentIntent, 3) Send notification to client with reason per FR-028 from contractor-bookings.yaml → `supabase/functions/refuse-booking-request/index.ts`
-- [ ] [T074] [P1] [US2] Create cron Edge Function expire-pending-requests.ts running every hour, setting booking_requests.status='expired' where expires_at < NOW() and status='pending' per FR-029 → `supabase/functions/expire-pending-requests/index.ts`
-- [ ] [T075] [P1] [US2] Configure Supabase cron job to run expire-pending-requests function hourly → `supabase/functions/expire-pending-requests/cron.yaml`
+- [X] [T067] [P1] [US2] Create contractor reservations page at app/contractor/reservations/page.tsx with tabs: "Pending Requests", "Upcoming", "Past" → `app/contractor/reservations/page.tsx`
+- [X] [T068] [P1] [US2] Build BookingRequestCard component displaying client info, service details, date/time, address, price, with Accept/Refuse buttons → `components/contractor/BookingRequestCard.tsx`
+- [X] [T069] [P1] [US2] Create Edge Function get-pending-requests.ts returning booking_requests with status='pending' and not expired per contractor-bookings.yaml → `supabase/functions/get-pending-requests/index.ts`
+- [X] [T070] [P1] [US2] Build AcceptBookingModal with confirmation message and Stripe payment capture warning → `components/contractor/AcceptBookingModal.tsx`
+- [X] [T071] [P1] [US2] Create Edge Function accept-booking-request.ts handling: 1) Update booking_requests.status='accepted', 2) Capture Stripe PaymentIntent, 3) Update appointment_bookings.status='confirmed', 4) Send confirmation email to client per FR-026-027 from contractor-bookings.yaml → `supabase/functions/accept-booking-request/index.ts`
+- [X] [T072] [P1] [US2] Build RefuseBookingModal with required reason textarea and optional message to client → `components/contractor/RefuseBookingModal.tsx`
+- [X] [T073] [P1] [US2] Create Edge Function refuse-booking-request.ts handling: 1) Update booking_requests.status='refused', 2) Cancel Stripe PaymentIntent, 3) Send notification to client with reason per FR-028 from contractor-bookings.yaml → `supabase/functions/refuse-booking-request/index.ts`
+- [X] [T074] [P1] [US2] Create cron Edge Function expire-pending-requests.ts running every hour, setting booking_requests.status='expired' where expires_at < NOW() and status='pending' per FR-029 → `supabase/functions/expire-pending-requests/index.ts`
+- [X] [T075] [P1] [US2] Configure Supabase cron job to run expire-pending-requests function hourly → `supabase/functions/expire-pending-requests/cron.yaml`
 
 ### Mark Service Completed (FR-029a to FR-029e)
 
-- [ ] [T076] [P1] [US2.1] Add "Mark as Completed" button to BookingCard component for bookings with status='in_progress' → `components/contractor/BookingCard.tsx`
-- [ ] [T077] [P1] [US2.1] Create Edge Function mark-service-completed.ts handling: 1) Update appointment_bookings.status='completed_by_contractor', 2) Insert service_action_logs entry (action_type='completed_by_contractor', performed_by_type='contractor'), 3) Send notification to client per FR-029b-029d from contractor-bookings.yaml → `supabase/functions/mark-service-completed/index.ts`
-- [ ] [T078] [P1] [US2.1] Add "Awaiting Payment" section to contractor dashboard showing bookings with status='completed_by_contractor' with orange badge → `app/contractor/dashboard/page.tsx`
-- [ ] [T079] [P1] [US2.1] Create client-side notification when contractor marks service as completed with "Confirm Payment" and "Add Tip" buttons → Handle in existing client notification system
+- [X] [T076] [P1] [US2.1] Add "Mark as Completed" button to BookingCard component for bookings with status='in_progress' → `components/contractor/BookingCard.tsx`
+- [X] [T077] [P1] [US2.1] Create Edge Function mark-service-completed.ts handling: 1) Update appointment_bookings.status='completed_by_contractor', 2) Insert service_action_logs entry (action_type='completed_by_contractor', performed_by_type='contractor'), 3) Send notification to client per FR-029b-029d from contractor-bookings.yaml → `supabase/functions/mark-service-completed/index.ts`
+- [X] [T078] [P1] [US2.1] Add "Awaiting Payment" section to contractor dashboard showing bookings with status='completed_by_contractor' with orange badge → `app/contractor/dashboard/page.tsx`
+- [X] [T079] [P1] [US2.1] Create client-side notification when contractor marks service as completed with "Confirm Payment" and "Add Tip" buttons → Handle in existing client notification system
 
 ### Upcoming & Past Bookings
 
-- [ ] [T080] [P1] [US2] Create Edge Function get-contractor-bookings.ts with filters: status (confirmed, in_progress, completed_by_contractor, completed), date range, pagination per contractor-bookings.yaml → `supabase/functions/get-contractor-bookings/index.ts`
-- [ ] [T081] [P1] [US2] Build UpcomingBookingsList component with date grouping (Today, Tomorrow, This Week, Later) → `components/contractor/UpcomingBookingsList.tsx`
-- [ ] [T082] [P1] [US2] Build PastBookingsList component with infinite scroll pagination and status filters → `components/contractor/PastBookingsList.tsx`
-- [ ] [T083] [P1] [US2] Add booking detail modal with full information (client contact, service details, payment status, action logs) → `components/contractor/BookingDetailModal.tsx`
+- [X] [T080] [P1] [US2] Create Edge Function get-contractor-bookings.ts with filters: status (confirmed, in_progress, completed_by_contractor, completed), date range, pagination per contractor-bookings.yaml → `supabase/functions/get-contractor-bookings/index.ts`
+- [X] [T081] [P1] [US2] Build UpcomingBookingsList component with date grouping (Today, Tomorrow, This Week, Later) → `components/contractor/UpcomingBookingsList.tsx`
+- [X] [T082] [P1] [US2] Build PastBookingsList component with infinite scroll pagination and status filters → `components/contractor/PastBookingsList.tsx`
+- [X] [T083] [P1] [US2] Add booking detail modal with full information (client contact, service details, payment status, action logs) → `components/contractor/BookingDetailModal.tsx`
 
 ---
 

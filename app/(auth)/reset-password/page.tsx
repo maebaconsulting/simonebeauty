@@ -1,42 +1,48 @@
-import { Metadata } from 'next'
+'use client'
+
 import { Suspense } from 'react'
-import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Lock } from 'lucide-react'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
 
-export const metadata: Metadata = {
-  title: 'Réinitialiser le mot de passe | Simone Paris',
-  description: 'Créez un nouveau mot de passe',
+function ResetPasswordContent() {
+  const searchParams = useSearchParams()
+  const email = searchParams.get('email') || ''
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#E97B6E]/10 rounded-full mb-4">
+            <Lock className="h-8 w-8 text-[#E97B6E]" />
+          </div>
+          <h1 className="font-playfair text-2xl font-semibold text-gray-900 mb-2">
+            Réinitialiser votre mot de passe
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Nous avons envoyé un code de vérification à 6 chiffres à
+          </p>
+          <p className="text-gray-900 font-medium mt-1">{email || 'votre adresse email'}</p>
+        </div>
+
+        {/* Form */}
+        <ResetPasswordForm />
+      </div>
+    </div>
+  )
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Réinitialiser le mot de passe
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Entrez le code reçu par email et votre nouveau mot de passe
-          </p>
-        </div>
-
-        {/* Form */}
-        <Suspense fallback={<div>Chargement...</div>}>
-          <ResetPasswordForm />
-        </Suspense>
-
-        {/* Back to login */}
-        <div className="text-center text-sm">
-          <Link
-            href="/login"
-            className="font-medium text-primary hover:underline"
-          >
-            Retour à la connexion
-          </Link>
+          <p className="text-gray-600">Chargement...</p>
         </div>
       </div>
-    </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

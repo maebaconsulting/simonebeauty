@@ -1,7 +1,6 @@
--- Migration: 20250107000011_create_service_action_logs.sql
--- Feature: 007 - Contractor Interface
--- Description: Create service action logs table with indexes and RLS policies
--- Date: 2025-11-07
+-- Migration: Create service_action_logs table
+-- Feature: 007-contractor-interface
+-- Description: Logs de toutes les actions effectuées sur les réservations pour traçabilité et audit
 
 CREATE TABLE service_action_logs (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -39,7 +38,8 @@ TO authenticated
 USING (
   booking_id IN (
     SELECT b.id FROM appointment_bookings b
-    WHERE b.contractor_id = auth.uid()
+    JOIN contractors c ON c.id = b.contractor_id
+    WHERE c.profile_uuid = auth.uid()
   )
 );
 

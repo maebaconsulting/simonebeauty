@@ -1,12 +1,11 @@
--- Migration: 20250107000010_create_booking_requests.sql
--- Feature: 007 - Contractor Interface
--- Description: Create booking requests table with indexes and RLS policies
--- Date: 2025-11-07
+-- Migration: Create booking_requests table
+-- Feature: 007-contractor-interface
+-- Description: Demandes de réservations en attente de validation par le prestataire (délai 24h)
 
 CREATE TABLE booking_requests (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   booking_id BIGINT UNIQUE NOT NULL REFERENCES appointment_bookings(id) ON DELETE CASCADE,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Statut de la demande
   status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'refused', 'expired')),
@@ -41,14 +40,18 @@ CREATE POLICY "Contractors can view own requests"
 ON booking_requests FOR SELECT
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Contractors can update own requests"
 ON booking_requests FOR UPDATE
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all requests"
@@ -61,6 +64,3 @@ USING (
     AND profiles.role = 'admin'
   )
 );
-
--- Trigger: auto-expire after 24h
--- This will be handled by a cron job (see Edge Function: expire-pending-requests.ts)

@@ -1,7 +1,6 @@
--- Migration: 20250107000001_create_contractor_applications.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor applications table with multi-step form fields, RLS policies, and validation trigger
--- Date: 2025-11-07
+-- Migration: Create contractor_applications table
+-- Feature: 007-contractor-interface
+-- Description: Candidatures de prestataires soumises via le formulaire multi-étapes
 
 CREATE TABLE contractor_applications (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,

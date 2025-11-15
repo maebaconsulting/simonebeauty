@@ -1,7 +1,6 @@
--- Migration: 20250107000000_create_specialties.sql
--- Feature: 007 - Contractor Interface
--- Description: Create specialties table with categories, indexes, RLS policies, and seed data
--- Date: 2025-11-07
+-- Migration: Create specialties table
+-- Feature: 007-contractor-interface
+-- Description: Spécialités prédéfinies disponibles pour les prestataires selon leur profession
 
 CREATE TABLE specialties (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { I18nProvider } from "@/components/providers/I18nProvider";
+import { Toaster } from "sonner";
 
 // Primary font - DM Sans (Design System)
 const dmSans = DM_Sans({
@@ -59,7 +61,10 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${playfair.variable} ${robotoMono.variable} font-sans antialiased`}
       >
-        <Providers>{children}</Providers>
+        <I18nProvider>
+          <Providers>{children}</Providers>
+        </I18nProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

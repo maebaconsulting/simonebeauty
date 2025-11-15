@@ -1,11 +1,10 @@
--- Migration: 20250107000008_create_contractor_slug_analytics.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor slug analytics table, indexes, RLS, and aggregated view
--- Date: 2025-11-07
+-- Migration: Create contractor_slug_analytics table and view
+-- Feature: 007-contractor-interface
+-- Description: Suivi des visites sur les liens personnalisés des prestataires et taux de conversion
 
 CREATE TABLE contractor_slug_analytics (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Visite
   slug_used VARCHAR(50) NOT NULL, -- Peut être ancien slug ou slug actuel
@@ -42,7 +41,9 @@ CREATE POLICY "Contractors can view own analytics"
 ON contractor_slug_analytics FOR SELECT
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all analytics"
@@ -75,4 +76,11 @@ COMMENT ON VIEW contractor_slug_stats IS 'Statistiques agrégées des visites et
 
 GRANT SELECT ON contractor_slug_stats TO authenticated;
 
--- Note: Views cannot have RLS policies. The view inherits RLS from contractor_slug_analytics table.
+CREATE POLICY "Contractors can view own stats"
+ON contractor_slug_stats FOR SELECT
+TO authenticated
+USING (
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
+);

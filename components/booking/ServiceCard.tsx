@@ -41,7 +41,7 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
             <span>{service.duration} min</span>
           </div>
           <div className="flex items-center gap-1 text-gray-900 font-semibold text-lg">
-            <span>{service.price}</span>
+            <span>{(service.base_price / 100).toFixed(2)}</span>
             <Euro className="w-4 h-4" />
           </div>
         </div>

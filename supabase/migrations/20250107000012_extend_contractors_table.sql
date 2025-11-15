@@ -1,9 +1,8 @@
--- Migration: 20250107000012_extend_contractors_table.sql
--- Feature: 007 - Contractor Interface
--- Description: Extend contractors table with slug columns, commission settings, Stripe Connect fields, indexes, and triggers
--- Date: 2025-11-07
+-- Migration: Extend contractors table
+-- Feature: 007-contractor-interface
+-- Description: Ajout des colonnes nécessaires à la table contractors existante
 
--- Extensions à la table contractors existante
+-- Add new columns
 ALTER TABLE contractors ADD COLUMN IF NOT EXISTS slug VARCHAR(50) UNIQUE NOT NULL DEFAULT '';
 ALTER TABLE contractors ADD COLUMN IF NOT EXISTS slug_changes_count INT DEFAULT 0;
 ALTER TABLE contractors ADD COLUMN IF NOT EXISTS slug_last_changed_at TIMESTAMP;

@@ -42,36 +42,21 @@ export async function POST(request: NextRequest) {
     // Get user ID from auth if not provided
     let targetUserId = userId
     if (!targetUserId) {
-      // For password reset, lookup user by email
-      if (type === 'password_reset') {
-        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers()
+      // For both password reset and email verification, lookup user by email
+      // This allows the flow to work even when user doesn't have a valid session yet
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers()
 
-        const user = userData?.users?.find(u => u.email === email)
+      const user = userData?.users?.find(u => u.email === email)
 
-        if (!user) {
-          // For security: don't reveal if email exists or not
-          // Return success but don't actually send email
-          return NextResponse.json({
-            success: true,
-            message: 'Si cette adresse email existe, un code a été envoyé',
-          })
-        }
-        targetUserId = user.id
-      } else {
-        // For email verification during signup, require auth header
-        const authHeader = request.headers.get('Authorization')
-        if (!authHeader) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-        const jwt = authHeader.replace('Bearer ', '')
-        const {
-          data: { user },
-        } = await supabaseAdmin.auth.getUser(jwt)
-        if (!user) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-        targetUserId = user.id
+      if (!user) {
+        // For security: don't reveal if email exists or not
+        // Return success but don't actually send email
+        return NextResponse.json({
+          success: true,
+          message: 'Si cette adresse email existe, un code a été envoyé',
+        })
       }
+      targetUserId = user.id
     }
 
     // Generate cryptographically secure 6-digit code
@@ -151,14 +136,17 @@ export async function POST(request: NextRequest) {
     `
 
     try {
-      await resend.emails.send({
-        from: 'Simone Paris <noreply@simone.paris>',
+      const emailResult = await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'Simone Paris <noreply@simone.paris>',
         to: [email],
         subject: emailSubject,
         html: emailHtml,
       })
+      console.log('✅ Email sent successfully to:', email)
+      console.log('📧 Email result:', JSON.stringify(emailResult, null, 2))
     } catch (emailError: any) {
-      console.error('Resend error:', emailError)
+      console.error('❌ Resend error:', emailError)
+      console.error('❌ Error details:', JSON.stringify(emailError, null, 2))
       return NextResponse.json(
         { error: 'Failed to send email', details: emailError.message },
         { status: 500 }

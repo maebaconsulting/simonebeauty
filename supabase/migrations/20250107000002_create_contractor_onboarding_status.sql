@@ -1,11 +1,10 @@
--- Migration: 20250107000002_create_contractor_onboarding_status.sql
--- Feature: 007 - Contractor Interface
--- Description: Create contractor onboarding status table with computed columns, indexes, RLS, and completion trigger
--- Date: 2025-11-07
+-- Migration: Create contractor_onboarding_status table
+-- Feature: 007-contractor-interface
+-- Description: État de complétion de l'onboarding obligatoire pour les nouveaux prestataires
 
 CREATE TABLE contractor_onboarding_status (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  contractor_id UUID UNIQUE NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+  contractor_id BIGINT UNIQUE NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
 
   -- Étapes de l'onboarding
   account_created BOOLEAN DEFAULT true, -- Always true once record exists
@@ -56,7 +55,9 @@ CREATE POLICY "Contractors can view own onboarding status"
 ON contractor_onboarding_status FOR SELECT
 TO authenticated
 USING (
-  contractor_id = auth.uid()
+  contractor_id IN (
+    SELECT id FROM contractors WHERE profile_uuid = auth.uid()
+  )
 );
 
 CREATE POLICY "Admins can view all onboarding status"
