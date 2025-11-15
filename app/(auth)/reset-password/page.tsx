@@ -1,10 +1,11 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Lock } from 'lucide-react'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
 
@@ -29,5 +30,19 @@ export default function ResetPasswordPage() {
         <ResetPasswordForm />
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="text-center">
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
