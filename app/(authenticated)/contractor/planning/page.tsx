@@ -10,7 +10,7 @@
  * Supports onboarding mode via ?onboarding=true query parameter
  */
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useUser } from '@/hooks/useUser'
 import {
@@ -37,7 +37,7 @@ import type { TimeRange, DayOfWeek } from '@/types/contractor'
 
 type TabType = 'configuration' | 'calendar'
 
-export default function ContractorPlanningPage() {
+function ContractorPlanningContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isOnboarding = searchParams?.get('onboarding') === 'true'
@@ -395,5 +395,24 @@ export default function ContractorPlanningPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ContractorPlanningPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4 animate-pulse">
+              <Calendar className="w-8 h-8 text-purple-600" />
+            </div>
+            <p className="text-gray-600 font-medium">Chargement de votre planning...</p>
+          </div>
+        </div>
+      }
+    >
+      <ContractorPlanningContent />
+    </Suspense>
   )
 }
